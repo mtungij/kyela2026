@@ -1,6 +1,6 @@
 <x-layouts.app :title="__('Malipo - ' . $member->name)">
 
-<div class="w-full">
+<div class="w-full max-w-screen-xl px-4 sm:px-6 lg:px-8 py-6">
     @if(session('success'))
     <div class="bg-teal-100 border border-teal-200 text-sm text-teal-800 rounded-lg p-4 dark:bg-teal-800/10 dark:border-teal-900 dark:text-teal-500 mb-4" role="alert">
         <div class="flex">
