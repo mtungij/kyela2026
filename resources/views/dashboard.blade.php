@@ -12,7 +12,7 @@
             <!-- Content -->
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Total Members
+                    Jumla ya Wanachama
                 </p>
 
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
@@ -20,7 +20,7 @@
                 </h2>
 
                 <p class="mt-1 text-xs text-green-600 dark:text-green-400">
-                    Click to view list
+                    Bonyeza kuona orodha
                 </p>
             </div>
 
@@ -53,7 +53,7 @@
             <!-- Content -->
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Expected Collection Today
+                    Ukusanyaji Unatarajiwa Leo
                 </p>
 
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
@@ -61,7 +61,7 @@
                 </h2>
 
                 <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                    Click for collections
+                    Bonyeza kwa mikusanyo
                 </p>
             </div>
 
@@ -100,9 +100,9 @@
 
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm opacity-70">Collection collected Today</p>
+                    <p class="text-sm opacity-70">Ukusanyaji Uliokusanywa Leo</p>
                     <h2 class="text-3xl font-bold">TZS {{ number_format($collectionCollectedToday, 2) }}</h2>
-                    <p class="text-xs mt-1 opacity-80">View payment report</p>
+                    <p class="text-xs mt-1 opacity-80">Tazama ripoti ya malipo</p>
                 </div>
 
                 <div class="w-14 h-14 flex items-center justify-center rounded-full
@@ -131,13 +131,13 @@
 
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Collections collected this week
+                    Mikusanyo Iliyokusanywa Wiki Hii
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                     {{ number_format($collectionsThisWeek) }}
                 </h2>
                 <p class="mt-1 text-xs text-indigo-600 dark:text-indigo-400">
-                    View payment report
+                    Tazama ripoti ya malipo
                 </p>
             </div>
 
@@ -164,13 +164,13 @@
 
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Payments Collected This Month
+                    Malipo Yaliyokusanywa Mwezi Huu
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                     TZS {{ number_format($paymentsCollectedThisMonth, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-green-600 dark:text-green-400">
-                    View payment report
+                    Tazama ripoti ya malipo
                 </p>
             </div>
 
@@ -196,13 +196,13 @@
 
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Payments Needed to collected this Month
+                Malipo Yanayohitajika Mwezi Huu
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                     {{ number_format($paymentsNeededThisMonth) }}
                 </h2>
                 <p class="mt-1 text-xs text-red-600 dark:text-red-400">
-                    View unpaid report
+                    Tazama ripoti ya hajalipa
                 </p>
             </div>
 
@@ -228,13 +228,13 @@
 
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                 Payments Needed to collected this Week
+                 Malipo Yanayohitajika Wiki Hii
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                     TZS {{ number_format($paymentsNeededThisWeek, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-                    View collections
+                    Tazama mikusanyo
                 </p>
             </div>
 
@@ -260,13 +260,13 @@
 
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Expenses Today
+                    Matumizi Leo
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                     TZS {{ number_format($expensesToday, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-red-600 dark:text-red-400">
-                    View expense list
+                    Tazama orodha ya matumizi
                 </p>
             </div>
 
@@ -291,13 +291,13 @@
 
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Expenses This Month
+                    Matumizi Mwezi Huu
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                     TZS {{ number_format($expensesThisMonth, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-purple-600 dark:text-purple-400">
-                    View expense list
+                    Tazama orodha ya matumizi
                 </p>
             </div>
 
@@ -323,13 +323,13 @@
 
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Penalties Paid Today
+                    Faini Zilizolipwa Leo
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                     TZS {{ number_format($penaltiesPaidToday, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-orange-600 dark:text-orange-400">
-                    Click to view details
+                    Bonyeza kuona maelezo
                 </p>
             </div>
 
@@ -353,7 +353,7 @@
 
         <div>
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Penalty Fees Collected Today
+                Faini Zilizokusanywa Leo
             </p>
             <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                 18
@@ -381,7 +381,7 @@
 
         <div>
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Penalty Fees Collected This Month
+                Faini Zilizokusanywa Mwezi Huu
             </p>
             <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                 27
