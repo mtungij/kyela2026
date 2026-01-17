@@ -47,17 +47,11 @@ $paymentsCollectedThisMonth = Payment::whereBetween('payment_date', [
 
 
         // Penalty Fees Collected This Month
-        $penaltyFeesCollectedThisMonth = Payment::whereBetween('payment_date', [
-            $now->copy()->startOfMonth(),
-            $now->copy()->endOfMonth(),
-        ])->sum('penalty_fee');
-
-
-
-        // Payments Needed to collected this Month (unpaid collections)
-        $paymentsNeededThisMonth = Collection::where('status', 'pending')
-            ->orWhere('balance', '>', 0)
-            ->count();
+        $penaltyFeesCollectedThisMonth = Payment::where('payment_type', 'penalty')
+            ->whereBetween('payment_date', [
+                $now->copy()->startOfMonth(),
+                $now->copy()->endOfMonth(),
+            ])->sum('amount');
 
         // Payments Needed to collected this Week (expected amount - paid amount)
         $expectedThisWeek = Member::where('type', 'daily')->sum('amount') * 7 + 
