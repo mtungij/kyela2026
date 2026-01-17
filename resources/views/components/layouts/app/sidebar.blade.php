@@ -68,7 +68,7 @@
         </flux:sidebar.header>
 
         <flux:sidebar.nav>
-            <flux:sidebar.item icon="home" href="#" current>Home</flux:sidebar.item>
+            <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" current>Home</flux:sidebar.item>
                 <flux:sidebar.group   expandable
                :expanded="false" heading="Members" class="grid">
                 <flux:sidebar.item   href="{{ route('members.index') }}" >Sajili Member</flux:sidebar.item>
@@ -76,11 +76,13 @@
         
             </flux:sidebar.group>
             <flux:sidebar.item icon="banknotes"  href="{{ route('collections.index') }}">Pokea Malipo</flux:sidebar.item>
+            <flux:sidebar.item icon="receipt-refund"  href="{{ route('expenses.index') }}">Matumizi</flux:sidebar.item>
      
 
      <flux:sidebar.group   expandable
     :expanded="false" heading="Reports" icon="chart-bar" class="grid">
-                <flux:sidebar.item href="#">Funga Hesabu</flux:sidebar.item>
+                <flux:sidebar.item href="{{ route('daily.report') }}">Funga Hesabu</flux:sidebar.item>
+   
                 <flux:sidebar.item href="{{ route('unpaid.report') }}">Ambao Hawajalipa</flux:sidebar.item>
                 <flux:sidebar.item href="{{ route('payments.report') }}">Ambao Wamelipa</flux:sidebar.item>
                 <flux:sidebar.item href="{{ route('penalties.report') }}">Ambao Waliolipa Faini</flux:sidebar.item>

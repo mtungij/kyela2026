@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\DailyReportController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\PaymentReportController;
 use App\Http\Controllers\UserController;
@@ -15,7 +18,7 @@ Route::get('/', function () {
     return redirect(route('login'));
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
+Route::get('dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
@@ -41,11 +44,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('payments/download-pdf', [PaymentReportController::class, 'downloadPdf'])->name('payments.download-pdf');
     Route::delete('payments/{paymentId}', [PaymentReportController::class, 'deletePayment'])->name('payments.delete');
     
+    Route::get('daily-report', [DailyReportController::class, 'index'])->name('daily.report');
+    
     Route::get('penalties/report', [PaymentReportController::class, 'penaltyReport'])->name('penalties.report');
     Route::get('penalties/download-pdf', [PaymentReportController::class, 'penaltyDownloadPdf'])->name('penalties.download-pdf');
+    Route::get('penalties/payments-list', [DashboardController::class, 'penaltyPaymentsList'])->name('penalties.payments-list');
     
     Route::get('unpaid/report', [PaymentReportController::class, 'unpaidReport'])->name('unpaid.report');
     Route::get('unpaid/download-pdf', [PaymentReportController::class, 'unpaidDownloadPdf'])->name('unpaid.download-pdf');
+    
+    Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::put('expenses/{id}', [ExpenseController::class, 'update'])->name('expenses.update');
+    Route::delete('expenses/{id}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
     
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(

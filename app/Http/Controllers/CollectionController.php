@@ -24,36 +24,21 @@ public function show($memberId)
         // Calculate current penalty
         $collection->getCurrentPenaltyBalance();
 
-        // Fetch normal payments
+        // Fetch all payments with type
         $payments = \App\Models\Payment::with('user')
             ->where('collection_id', $collection->id)
+            ->orderBy('payment_date', 'desc')
             ->get();
 
-        // If you track penalty payments separately
-        $penaltyPayments = $collection->penaltyPayments ?? collect();
-
-        // Merge all payments
         $allPayments = $payments->map(function ($p) {
             return [
                 'date' => $p->payment_date,
                 'amount' => $p->amount,
-                'type' => 'Mchango', // regular payment
+                'type' => $p->payment_type === 'penalty' ? 'Faini' : 'Mchango',
                 'notes' => $p->notes,
                 'user' => $p->user->name ?? 'N/A',
             ];
         });
-
-        $allPayments = $allPayments->merge(
-            $penaltyPayments->map(function ($p) {
-                return [
-                    'date' => $p->payment_date,
-                    'amount' => $p->amount,
-                    'type' => 'Faini', // penalty
-                    'notes' => $p->notes ?? 'Faini ya kuchelewa',
-                    'user' => $p->user->name ?? 'N/A',
-                ];
-            })
-        )->sortByDesc('date'); // newest first
     } else {
         $allPayments = collect();
     }
@@ -68,6 +53,7 @@ public function show($memberId)
             'collection_id' => 'required|exists:collections,id',
             'amount' => 'required|numeric|min:0',
             'payment_date' => 'required|date',
+            'payment_type' => 'nullable|in:regular,penalty',
             'notes' => 'nullable|string',
         ]);
 
@@ -77,31 +63,39 @@ public function show($memberId)
             // Calculate current penalty
             $penaltyBalance = $collection->getCurrentPenaltyBalance();
             $paymentAmount = $validated['amount'];
+            $paymentType = $validated['payment_type'] ?? 'regular';
             $penaltyPayment = 0;
             $loanPayment = 0;
             
-            // First, apply payment to penalty if exists
-            if ($penaltyBalance > 0) {
-                if ($paymentAmount >= $penaltyBalance) {
-                    // Full penalty payment + remaining to loan
-                    $penaltyPayment = $penaltyBalance;
-                    $loanPayment = $paymentAmount - $penaltyBalance;
+            // Determine how to split payment based on type and balances
+            if ($paymentType === 'penalty' || $penaltyBalance > 0) {
+                // First, apply payment to penalty if exists
+                if ($penaltyBalance > 0) {
+                    if ($paymentAmount >= $penaltyBalance) {
+                        // Full penalty payment + remaining to loan
+                        $penaltyPayment = $penaltyBalance;
+                        $loanPayment = $paymentAmount - $penaltyBalance;
+                    } else {
+                        // Partial penalty payment only
+                        $penaltyPayment = $paymentAmount;
+                        $loanPayment = 0;
+                    }
                 } else {
-                    // Partial penalty payment only
-                    $penaltyPayment = $paymentAmount;
-                    $loanPayment = 0;
+                    // No penalty, full payment goes to loan
+                    $loanPayment = $paymentAmount;
                 }
             } else {
                 // No penalty, full payment goes to loan
                 $loanPayment = $paymentAmount;
             }
             
-            // Create payment record
+            // Create payment record with type
             \App\Models\Payment::create([
                 'member_id' => $validated['member_id'],
                 'collection_id' => $validated['collection_id'],
                 'user_id' => auth()->id(),
                 'amount' => $validated['amount'],
+                'payment_type' => $penaltyPayment > 0 ? 'penalty' : 'regular',
                 'payment_date' => $validated['payment_date'],
                 'notes' => $validated['notes'] ?? null,
             ]);

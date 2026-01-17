@@ -130,11 +130,11 @@
 
                     <div class="mt-4 text-center">
                         @if($collection->penalty_balance > 0)
-                        <button type="button" onclick="openPaymentModal()" class="inline-flex items-center px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all dark:bg-orange-600 dark:hover:bg-orange-700">
+                        <button type="button" onclick="openPaymentModal('penalty')" class="inline-flex items-center px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all dark:bg-orange-600 dark:hover:bg-orange-700">
                             ⚠️ Lipa Faini
                         </button>
                         @else
-                        <button type="button" onclick="openPaymentModal()" class="inline-flex items-center px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all dark:bg-cyan-600 dark:hover:bg-cyan-700">
+                        <button type="button" onclick="openPaymentModal('regular')" class="inline-flex items-center px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all dark:bg-cyan-600 dark:hover:bg-cyan-700">
                             💰 Fanya Malipo
                         </button>
                         @endif
@@ -225,12 +225,8 @@
     <div class="relative p-4 w-full max-w-md max-h-full">
         <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
             <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                    @if($collection->penalty_balance > 0)
-                        Lipa Faini
-                    @else
-                        Fanya Malipo
-                    @endif
+                <h3 id="modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
+                    Fanya Malipo
                 </h3>
                 <button type="button" onclick="closePaymentModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -243,6 +239,16 @@
                 @csrf
                 <input type="hidden" name="member_id" value="{{ $member->id }}">
                 <input type="hidden" name="collection_id" value="{{ $collection->id ?? '' }}">
+                <input type="hidden" name="payment_type" id="payment_type" value="regular">
+                
+                <!-- Penalty Info Alert -->
+                <div id="penalty-info" class="hidden mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
+                    <h4 class="text-sm font-bold text-orange-800 dark:text-orange-400 mb-2">⚠️ Malipo ya Faini</h4>
+                    <div class="text-xs text-orange-700 dark:text-orange-300">
+                        <p class="mb-1"><strong>Baki ya Faini:</strong> TZS {{ number_format($collection->penalty_balance ?? 0, 0) }}</p>
+                        <p class="text-xs italic">Faini lazima ilipwe kwanza kabla ya malipo ya mchango</p>
+                    </div>
+                </div>
                 
                 <div class="space-y-4">
                     <div>
@@ -421,9 +427,26 @@
         }
     }
 
-    function openPaymentModal() {
-        document.getElementById('payment-modal').classList.remove('hidden');
-        document.getElementById('payment-modal').classList.add('flex');
+    function openPaymentModal(type = 'regular') {
+        const modal = document.getElementById('payment-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const penaltyInfo = document.getElementById('penalty-info');
+        const paymentTypeInput = document.getElementById('payment_type');
+        
+        // Set payment type
+        paymentTypeInput.value = type;
+        
+        // Update modal content based on type
+        if (type === 'penalty') {
+            modalTitle.textContent = '⚠️ Lipa Faini';
+            penaltyInfo.classList.remove('hidden');
+        } else {
+            modalTitle.textContent = '💰 Fanya Malipo';
+            penaltyInfo.classList.add('hidden');
+        }
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
 
     function closePaymentModal() {

@@ -12,6 +12,7 @@ class Payment extends Model
         'collection_id',
         'user_id',
         'amount',
+        'payment_type',
         'payment_date',
         'notes',
     ];
