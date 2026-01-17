@@ -346,7 +346,7 @@
 </div>
 
 
-<div class="max-w-sm">
+{{-- <div class="max-w-sm">
     <div class="flex items-center justify-between p-6 rounded-2xl shadow
                 bg-white dark:bg-gray-900
                 border border-gray-200 dark:border-gray-700">
@@ -371,10 +371,10 @@
             </svg>
         </div>
     </div>
-</div>
+</div> --}}
 
 
-<div class="max-w-sm">
+{{-- <div class="max-w-sm">
     <div class="flex items-center justify-between p-6 rounded-2xl shadow
                 bg-white dark:bg-gray-900
                 border border-gray-200 dark:border-gray-700">
@@ -399,7 +399,7 @@
             </svg>
         </div>
     </div>
-</div> 
+</div>  --}}
 
         </div>
       
