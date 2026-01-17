@@ -53,6 +53,11 @@ $paymentsCollectedThisMonth = Payment::whereBetween('payment_date', [
                 $now->copy()->endOfMonth(),
             ])->sum('amount');
 
+        // Payments Needed to collected this Month (unpaid collections)
+        $paymentsNeededThisMonth = Collection::where('status', 'pending')
+            ->orWhere('balance', '>', 0)
+            ->count();
+
         // Payments Needed to collected this Week (expected amount - paid amount)
         $expectedThisWeek = Member::where('type', 'daily')->sum('amount') * 7 + 
                            Member::where('type', 'weekly')->sum('amount');
