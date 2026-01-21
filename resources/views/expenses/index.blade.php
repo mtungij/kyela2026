@@ -152,7 +152,7 @@
         <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
             <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
                 <h3 id="modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
-                    Ongeza Gharama
+                    Ingiza Matumizi Mapya
                 </h3>
                 <button type="button" onclick="closeExpenseModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -177,7 +177,7 @@
                             <option value="Mawasiliano">Mawasiliano</option>
                             <option value="Nyingine">Nyingine</option>
                         </select>
-                        <input type="text" name="category" id="category"  class="bg-gray-50 border border-red-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-600 dark:border-red-500 dark:placeholder-gray-400 dark:text-white" placeholder="Weka kiasi" required>
+                        
                         @error('category')
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
