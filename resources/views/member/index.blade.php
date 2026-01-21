@@ -41,7 +41,7 @@
                         @foreach($members as $member)
 
 <div
-    class="relative flex flex-col gap-4 p-5 max-w-sm w-full
+    class="relative flex flex-col gap-4 p-5 mt-3 max-w-sm w-full
            bg-white dark:bg-gray-900
            border border-gray-200 dark:border-gray-700
            rounded-2xl shadow-md hover:shadow-xl
