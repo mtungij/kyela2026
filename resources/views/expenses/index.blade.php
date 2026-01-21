@@ -69,7 +69,7 @@
     <!-- Expenses Table -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
         <div class="p-6">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Orodha ya Gharama</h2>
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Orodha ya Matumizi</h2>
             
             @if($expenses->count() > 0)
             <div class="overflow-x-auto">
@@ -167,7 +167,7 @@
                 
                 <div class="space-y-4">
                     <div>
-                        <label for="category" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Aina ya Gharama</label>
+                        <label for="category" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Aina ya Matumizi</label>
                         <select name="category" id="category" class="bg-gray-50 border border-red-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-600 dark:border-red-500 dark:placeholder-gray-400 dark:text-white" required>
                             <option value="">Chagua aina</option>
                             <option value="Transport">Transport</option>
@@ -185,7 +185,7 @@
                     
                     <div>
                         <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Maelezo</label>
-                        <textarea name="description" id="description" rows="3" class="bg-gray-50 border border-red-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-600 dark:border-red-500 dark:placeholder-gray-400 dark:text-white" placeholder="Eleza gharama..." required></textarea>
+                        <textarea name="description" id="description" rows="3" class="bg-gray-50 border border-red-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-600 dark:border-red-500 dark:placeholder-gray-400 dark:text-white" placeholder="Eleza matumizi..." required></textarea>
                         @error('description')
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
