@@ -50,6 +50,12 @@
                     <h1 class="text-cyan-600 dark:text-cyan-400 font-bold text-xl text-center uppercase whitespace-nowrap overflow-hidden truncate">
                         {{ strtoupper($member->name) }}
                     </h1>
+                    <div class="flex justify-center">
+                        <a href="{{ route('send_sms', ['member' => $member->id]) }}" class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all dark:bg-green-600 dark:hover:bg-green-700">
+                            Tuma sms ya malipo
+                        </a>
+                    </div>
+                      
                     <h2 class="text-sm text-cyan-500 dark:text-cyan-400 text-center font-semibold">({{ $member->address }})</h2>
                     <p class="text-center mt-2 text-gray-800 dark:text-gray-200 font-medium">{{ $member->phone }}</p>
 

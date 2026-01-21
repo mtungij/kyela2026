@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Member;
+use App\Models\Collection;
+use Carbon\Carbon;
 
 class CollectionController extends Controller
 {
@@ -46,6 +49,39 @@ public function show($memberId)
     return view('collections.show', compact('member', 'collection', 'allPayments'));
 }
 
+public function paymentSms($memberId)
+{
+
+    $member = Member::findOrFail($memberId);
+    $memberpayments = $member->collections()->first();
+   $sumPaid = $member->collections()->sum('amount_paid');
+     $remain = $memberpayments->total_amount -  $sumPaid;
+     $total = $memberpayments->total_amount;    
+     $name = $member->name;
+     $phone = $member->phone;
+
+    //  dd($sumPaid);
+
+     $currentDate = Carbon::today()->format('d-m-Y');
+
+$massage = "Habari {$member->name}, tunakukumbusha katika jumla ya kiasi cha kuchangia Tsh "
+    . number_format($total, 0) .
+    " mpaka tarehe {$currentDate} umelipa jumla Tsh "
+    . number_format($sumPaid, 0) .
+    " na kilichobaki kulipwa ni Tsh "
+    . number_format($remain, 0) .
+    ". Asante kwa ushirikiano wako Kalumbulu Group!";
+
+
+    $this->sendsms($phone,$massage);
+
+    return redirect()->back()->with('success', 'SMS ya malipo imetumwa kwa ' . $member->name);
+    
+
+
+ 
+}
+
     public function storePayment(Request $request)
     {
         $validated = $request->validate([
@@ -66,6 +102,8 @@ public function show($memberId)
             $paymentType = $validated['payment_type'] ?? 'regular';
             $penaltyPayment = 0;
             $loanPayment = 0;
+
+            // dd($paymentType);
             
             // Determine how to split payment based on type and balances
             if ($paymentType === 'penalty' || $penaltyBalance > 0) {
@@ -88,6 +126,23 @@ public function show($memberId)
                 // No penalty, full payment goes to loan
                 $loanPayment = $paymentAmount;
             }
+
+            $memberName = Member::find($validated['member_id'])->name;
+            $phone = Member::find($validated['member_id'])->phone;
+            $amount=$validated['amount'];
+            $totalPaid = $collection->amount_paid + $loanPayment;
+            $remain = $collection->total_amount - $totalPaid;
+            // dd($remain);
+      $currentDate = Carbon::today()->format('d-m-Y');
+$massage = "Habari {$memberName}, tumepokea malipo yako ya Tsh "
+    . number_format($amount, 0) .
+    " tarehe {$currentDate}. Jumla uliyolipa mpaka sasa ni Tsh "
+    . number_format($totalPaid, 0) .
+    " na kilichobaki kulipwa ni Tsh "
+    . number_format($remain, 0) .
+    ". Asante kwa ushirikiano wako Kalumbulu Group!";
+
+        $this->sendsms($phone,$massage);
             
             // Create payment record with type
             \App\Models\Payment::create([
@@ -131,4 +186,39 @@ public function show($memberId)
             ->with('success', 'Malipo yamefanikiwa kurekodiwa!');
     }
 
+
+
+
+     public function sendsms($phone,$massage){
+    //public function sendsms(){f
+    //$phone = '255628323760';
+    //$massage = 'mapenzi yanauwa';
+    // $api_key = '';                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+    //$api_key = 'qFzd89PXu1e/DuwbwxOE5uUBn6';
+    //$curl = curl_init();
+    $url = "https://sms-api.kadolab.com/api/send-sms";
+    $token = getenv('SMS_TOKEN');
+
+  
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+      'Authorization: Bearer '. $token,
+      'Content-Type: application/json',
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+      "phoneNumbers" => ["+$phone"],
+      "message" => $massage
+    ]));
+  
+  $server_output = curl_exec($ch);
+  curl_close ($ch);
+  
+  //print_r($server_output);
+  }
+  
 }
+
+
+

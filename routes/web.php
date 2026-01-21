@@ -52,9 +52,13 @@ Route::middleware(['auth'])->group(function () {
     
     Route::get('unpaid/report', [PaymentReportController::class, 'unpaidReport'])->name('unpaid.report');
     Route::get('unpaid/download-pdf', [PaymentReportController::class, 'unpaidDownloadPdf'])->name('unpaid.download-pdf');
+    Route::get('send-sms/{member}', [CollectionController::class, 'paymentSms'])->name('send_sms');
     
     Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
-    Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::post('expenses', [ExpenseController::class, 'store'])->name('expense
+}
+
+    public function s.store');
     Route::put('expenses/{id}', [ExpenseController::class, 'update'])->name('expenses.update');
     Route::delete('expenses/{id}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
     

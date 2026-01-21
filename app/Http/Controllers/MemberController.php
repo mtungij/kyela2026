@@ -85,6 +85,16 @@ class MemberController extends Controller
                 'status' => 'pending',
             ]);
         });
+
+        
+
+        $phone = $validatedData['phone'];
+     $massage = "Karibu $validatedData[name] kwenye Kalumbulu Group Kikundi cha kuwezeshana. Karibu tushirikiane na kuwezeshana!";
+
+   
+
+
+        $this->sendsms($phone,$massage);
         
         return redirect()->route('members.index')->with('success', 'Member created successfully.'); 
     }
@@ -172,4 +182,35 @@ class MemberController extends Controller
         
         return redirect()->route('members.index')->with('info', 'Hakuna faini ya kusamehe.');
     }
+
+
+     public function sendsms($phone,$massage){
+    //public function sendsms(){f
+    //$phone = '255628323760';
+    //$massage = 'mapenzi yanauwa';
+    // $api_key = '';                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+    //$api_key = 'qFzd89PXu1e/DuwbwxOE5uUBn6';
+    //$curl = curl_init();
+    $url = "https://sms-api.kadolab.com/api/send-sms";
+    $token = getenv('SMS_TOKEN');
+
+  
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+      'Authorization: Bearer '. $token,
+      'Content-Type: application/json',
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+      "phoneNumbers" => ["+$phone"],
+      "message" => $massage
+    ]));
+  
+  $server_output = curl_exec($ch);
+  curl_close ($ch);
+  
+  //print_r($server_output);
+  }
+  
 }
