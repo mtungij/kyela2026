@@ -60,9 +60,9 @@
                     TZS {{ number_format($expectedCollectionToday, 2) }}
                 </h2>
 
-                <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                {{-- <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">
                     Bonyeza kwa mikusanyo
-                </p>
+                </p> --}}
             </div>
 
             <!-- Icon -->
@@ -131,7 +131,7 @@
 
             <div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Mikusanyo Iliyokusanywa Wiki Hii
+                    Makusanyo Iliyokusanywa Wiki Hii
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
                     {{ number_format($collectionsThisWeek) }}
@@ -234,7 +234,7 @@
                     TZS {{ number_format($paymentsNeededThisWeek, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-                    Tazama mikusanyo
+                    Tazama makusanyo
                 </p>
             </div>
 
