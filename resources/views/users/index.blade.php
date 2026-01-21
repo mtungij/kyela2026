@@ -76,20 +76,21 @@
                                 <td class="px-4 py-3">
                                     <div class="flex flex-col sm:flex-row gap-2">
                                         <a href="{{ route('users.edit', $user) }}"
-                                           class="text-cyan-600 dark:text-cyan-500 hover:underline">
-                                            Badilisha
-                                        </a>
+           class="bg-cyan-600 hover:bg-cyan-700 text-white font-medium px-3 py-1 rounded-md text-sm text-center">
+            Badilisha
+        </a>
+
 
                                         @if($user->id !== auth()->id())
                                             <button
-                                                onclick="confirm('Je, una hakika?') &&
-                                                fetch('{{ route('users.destroy', $user) }}', {
-                                                    method: 'DELETE',
-                                                    headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}
-                                                }).then(() => location.reload())"
-                                                class="text-red-600 dark:text-red-500 hover:underline">
-                                                Futa
-                                            </button>
+                onclick="confirm('Je, una hakika?') &&
+                fetch('{{ route('users.destroy', $user) }}', {
+                    method: 'DELETE',
+                    headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}
+                }).then(() => location.reload())"
+                class="bg-red-600 hover:bg-red-700 text-white font-medium px-3 py-1 rounded-md text-sm text-center">
+                Futa
+            </button>
                                         @endif
                                     </div>
                                 </td>
