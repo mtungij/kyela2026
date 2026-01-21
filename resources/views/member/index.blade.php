@@ -40,120 +40,143 @@
 
                         @foreach($members as $member)
 
+<div
+    class="relative flex flex-col gap-4 p-5 max-w-sm w-full
+           bg-white dark:bg-gray-900
+           border border-gray-200 dark:border-gray-700
+           rounded-2xl shadow-md hover:shadow-xl
+           transition-shadow duration-300">
 
-        <div class="flex flex-col gap-2 p-4 shadow-lg border border-gray-300 rounded-lg bg-white dark:bg-gray-900">
-            <div class="w-full flex justify-center items-center -mt-8">
-                <img class="w-24 h-24 rounded-full outline outline-offset-2 outline-1 outline-blue-400" src="{{ asset('images/member.png') }}" alt="Member" />
-            </div>
+    <!-- Avatar -->
+    <div class="flex justify-center -mt-12">
+        <img
+            class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
+                   ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
+            src="{{ asset('images/member.png') }}"
+            alt="Member">
+    </div>
 
-            <div class="w-full text-center flex flex-col gap-4 mt-2">
-                  <ul class="mt-5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 divide-y divide-gray-300 dark:divide-gray-600 rounded-lg shadow-sm text-sm">
-                        <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-                            <span >Jina</span>
-                           {{ $member->name }}
-                            </span>
-                        </li>
-                        <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-                            <span>Namba Ya Simu</span>
-                            <span class="capitalize">{{ $member->phone }}</span>
-                        </li>
-                         <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-                            <span>Makazi</span>
-                            <span>{{ $member->address}}</span>
-                        </li>
-                        <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-                            <span>Biashara</span>
-                            <span>{{ $member->business_address }}</span>
-                        </li>
+    <!-- Member Details -->
+    <ul
+        class="mt-4 text-sm rounded-xl overflow-hidden
+               bg-gray-100 dark:bg-gray-800
+               text-gray-800 dark:text-gray-200
+               divide-y divide-gray-300 dark:divide-gray-700">
 
-                          <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-                            <span>Kiasi cha Kuchangia</span>
-                            <span>{{ number_format($member->amount, 0) }}</span>
-                        </li>
+        <li class="flex justify-center px-4 py-2 font-semibold">
+            <span class="uppercase">{{ $member->name }}</span>
+        </li>
 
-                         <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-    <span>Muda Gani</span>
-    <span>
-        @if($member->type === 'daily')
-            Kila Siku ({{ $member->number_type }})
-        @elseif($member->type === 'weekly')
-            Kila Wiki ({{ $member->number_type }})
-        @elseif($member->type === 'monthly')
-            Kila Mwezi ({{ $member->number_type }})
-        @endif
-    </span>
-</li>
+        <li class="flex justify-center px-4 py-2">
+            <span>{{ $member->phone }}</span>
+        </li>
 
+        <li class="flex justify-between px-4 py-2">
+            <span>Makazi</span>
+            <span>{{ $member->address }}</span>
+        </li>
 
-       <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-                            <span>Faini</span>
-                            @php
-                                    $collection = $member->collections->first();
-                                    $penaltyBalance = $collection ? $collection->getCurrentPenaltyBalance() : 0;
-                                @endphp
-                                @if($penaltyBalance > 0)
-                                    <span class="font-semibold text-orange-600 dark:text-orange-400">{{ number_format($penaltyBalance) }}</span>
-                                @else
-                                    <span class="text-gray-800 dark:text-gray-400">0</span>
-                                @endif
-                        </li>
+        <li class="flex justify-between px-4 py-2">
+            <span>Biashara</span>
+            <span>{{ $member->business_address }}</span>
+        </li>
 
+        <li class="flex justify-between px-4 py-2 font-semibold">
+            <span>Kiasi cha Kuchangia</span>
+            <span>{{ number_format($member->amount, 0) }}</span>
+        </li>
 
-                       
-                    </ul>
+        <li class="flex justify-between px-4 py-2">
+            <span>Muda</span>
+            <span>
+                @if($member->type === 'daily')
+                    Kila Siku ({{ $member->number_type }})
+                @elseif($member->type === 'weekly')
+                    Kila Wiki ({{ $member->number_type }})
+                @elseif($member->type === 'monthly')
+                    Kila Mwezi ({{ $member->number_type }})
+                @endif
+            </span>
+        </li>
 
+        <li class="flex justify-between px-4 py-2 font-semibold">
+            <span>Faini</span>
+            @php
+                $collection = $member->collections->first();
+                $penaltyBalance = $collection ? $collection->getCurrentPenaltyBalance() : 0;
+            @endphp
 
-
-                    
-
-
+            @if($penaltyBalance > 0)
+                <span class="text-orange-600 dark:text-orange-400">
+                    {{ number_format($penaltyBalance) }}
+                </span>
+            @else
+                <span class="text-gray-500 dark:text-gray-400">0</span>
+            @endif
+        </li>
+    </ul>
+   @if(auth()->user()->isAdmin())
     <!-- Action Button -->
-    <button id="dropdown-{{ $member->id }}-button" 
-            data-dropdown-toggle="dropdown-{{ $member->id }}" 
-            class="inline-flex items-center justify-center text-white bg-cyan-700 box-border border border-transparent hover:bg-cyan-800 focus:ring-4 focus:ring-cyan-600 shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none" 
-            type="button">
-        Action 
-        <svg class="w-4 h-4 ms-1.5 -me-0.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/>
+    <button
+        id="dropdown-{{ $member->id }}-button"
+        data-dropdown-toggle="dropdown-{{ $member->id }}"
+        class="mt-3 inline-flex items-center justify-center gap-2
+               w-full px-4 py-2.5 text-sm font-medium
+               rounded-xl text-white
+               bg-cyan-700 hover:bg-cyan-800
+               focus:ring-4 focus:ring-cyan-500 focus:outline-none">
+        Action
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="m19 9-7 7-7-7"/>
         </svg>
     </button>
 
-    <!-- Dropdown menu -->
-    <div id="dropdown-{{ $member->id }}" class="z-10 hidden bg-neutral-primary-medium border border-default-medium rounded-base shadow-lg w-44">
-        <ul class="p-2 text-sm text-body font-medium" aria-labelledby="dropdown-{{ $member->id }}-button">
+    <!-- Dropdown -->
+    <div
+        id="dropdown-{{ $member->id }}"
+        class="hidden absolute right-5 bottom-16 z-20 w-44
+               bg-white dark:bg-gray-800
+               border border-gray-200 dark:border-gray-700
+               rounded-xl shadow-lg">
+
+        <ul class="p-2 text-sm">
             <li>
-                <a href="#" 
-                   data-modal-target="editModal-{{ $member->id }}" 
-                   data-modal-toggle="editModal-{{ $member->id }}" 
-                   class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded">
-                   Edit Member
+                <a href="#"
+                   data-modal-target="editModal-{{ $member->id }}"
+                   data-modal-toggle="editModal-{{ $member->id }}"
+                   class="block px-3 py-2 rounded-lg
+                          hover:bg-gray-100 dark:hover:bg-gray-700">
+                    Edit Member
                 </a>
             </li>
+
             @if($penaltyBalance > 0)
             <li>
-                <a href="#" 
-                   data-modal-target="forgivePenaltyModal-{{ $member->id }}" 
-                   data-modal-toggle="forgivePenaltyModal-{{ $member->id }}" 
-                   class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded">
-                   Samehe Faini
+                <a href="#"
+                   data-modal-target="forgivePenaltyModal-{{ $member->id }}"
+                   data-modal-toggle="forgivePenaltyModal-{{ $member->id }}"
+                   class="block px-3 py-2 rounded-lg
+                          hover:bg-gray-100 dark:hover:bg-gray-700">
+                    Samehe Faini
                 </a>
             </li>
             @endif
+
             <li>
-                <a href="#" 
-                   data-modal-target="deleteModal-{{ $member->id }}" 
-                   data-modal-toggle="deleteModal-{{ $member->id }}" 
-                   class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded text-red-700">
-                   Futa Member
+                <a href="#"
+                   data-modal-target="deleteModal-{{ $member->id }}"
+                   data-modal-toggle="deleteModal-{{ $member->id }}"
+                   class="block px-3 py-2 rounded-lg text-red-600
+                          hover:bg-red-50 dark:hover:bg-red-900/20">
+                    Futa Member
                 </a>
             </li>
         </ul>
     </div>
+    @endif
+</div>
 
-
-            </div>
-
-        </div>
                       
                         @endforeach
             </div>
@@ -384,7 +407,7 @@
 
                     <div>
                         <label for="number_type" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Idadi Ya Malipo</label>
-                        <input type="number" name="number_type" id="number_type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('number_type') border-red-500 @enderror" placeholder="Idadi ya malipo"  value="{{ old('number_type') }}">
+                        <input type="number" name="number_type" id="number_type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('number_type') border-red-500 @enderror" placeholder="Idadi jumla ya siku za malipo"  value="{{ old('number_type') }}">
                         @error('number_type')
                             <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
                         @enderror

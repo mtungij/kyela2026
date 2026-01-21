@@ -6,7 +6,7 @@
             <img src="{{ asset('images/logo.jpeg') }}" alt="Logo" class="h-36 w-auto rounded-full">
         </div>
 
-        <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
+        <x-auth-header :title="__('Ingia kwenye akaunti yako')" :description="__('Ingiza barua pepe na nenosiri lako hapa ili kuingia')" />
 
         <!-- Session Status -->
         <x-auth-session-status class="text-center" :status="session('status')" />

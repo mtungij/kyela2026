@@ -12,15 +12,7 @@
 
             {{-- <flux:separator vertical variant="subtle" class="my-2"/> --}}
 
-            <flux:dropdown class="">
-            
-
-                <flux:navmenu>
-                    <flux:navmenu.item href="#">Marketing site</flux:navmenu.item>
-                    <flux:navmenu.item href="#">Android app</flux:navmenu.item>
-                    <flux:navmenu.item href="#">Brand guidelines</flux:navmenu.item>
-                </flux:navmenu>
-            </flux:dropdown>
+        
         </flux:navbar>
 
         <flux:spacer />
