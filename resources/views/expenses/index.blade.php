@@ -27,7 +27,7 @@
             <div class="flex flex-col max-w-screen-xl px-4 mx-auto md:flex-row md:justify-between md:px-6 lg:px-8">
                 <div class="p-4 flex flex-row items-center justify-between">
                     <h1 class="text-lg font-semibold tracking-widest uppercase rounded-lg focus:outline-none focus:shadow-outline">
-                        Usimamizi wa Gharama
+                        Matumizi
                     </h1>
                 </div>
             </div>
@@ -37,19 +37,19 @@
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-l-4 border-red-500">
-            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Gharama za Leo</h3>
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Matumizi ya Leo</h3>
             <p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-2">
                 TZS {{ number_format($todayExpenses, 2) }}
             </p>
         </div>
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-l-4 border-orange-500">
-            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Gharama za Mwezi Huu</h3>
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Matumizi ya Mwezi</h3>
             <p class="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-2">
                 TZS {{ number_format($monthlyExpenses, 2) }}
             </p>
         </div>
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-l-4 border-gray-500">
-            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Jumla ya Gharama Zote</h3>
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Jumla ya Matumizi yote</h3>
             <p class="text-2xl font-bold text-gray-600 dark:text-gray-400 mt-2">
                 TZS {{ number_format($totalExpenses, 2) }}
             </p>
@@ -62,7 +62,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Ongeza Gharama
+            Ingiza Matumizi Mapya
         </button>
     </div>
 
