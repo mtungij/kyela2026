@@ -86,7 +86,7 @@
                 <flux:sidebar.item href="{{ route('profile.edit') }}" icon="user">Profaili Yangu</flux:sidebar.item>
                 <flux:sidebar.item href="{{ route('user-password.edit') }}" icon="lock-closed">Badilisha Password</flux:sidebar.item>
                 @if(auth()->user()->isAdmin())
-                <flux:sidebar.item href="{{ route('users.index') }}" icon="users">Wasimamizi wa Users</flux:sidebar.item>
+                <flux:sidebar.item href="{{ route('users.index') }}" icon="users">Watumiaji wa mfumo</flux:sidebar.item>
                 @endif
             </flux:sidebar.group>
 
