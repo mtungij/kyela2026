@@ -73,7 +73,7 @@
             
             @if($expenses->count() > 0)
             <div class="overflow-x-auto">
-                <table class="w-ful">
+                <table class="w-full">
                     <thead class="bg-red-600 dark:bg-red-700">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">#</th>
