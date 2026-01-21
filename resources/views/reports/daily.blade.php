@@ -340,7 +340,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
             <div class="p-6">
                 <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                    Gharama ({{ $expenses->count() }})
+                    Matumizi ({{ $expenses->count() }})
                 </h2>
                 
                 @if($expenses->count() > 0)
@@ -381,7 +381,7 @@
                     </table>
                 </div>
                 @else
-                <p class="text-center text-gray-500 dark:text-gray-400 py-8">Hakuna gharama zilizorekodiwa</p>
+                <p class="text-center text-gray-500 dark:text-gray-400 py-8">Hakuna Matumizi yaliyorekodiwa</p>
                 @endif
             </div>
         </div>
