@@ -49,11 +49,11 @@
                     </div>
 
                     <div>
-                        <label for="role" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Jukumu (Role)</label>
+                        <label for="role" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cheo</label>
                         <select id="role" name="role" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('role') border-red-500 @enderror" required>
                             <option value="">Chagua Jukumu</option>
-                            <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin - Ruhusa Kamili</option>
-                            <option value="cashier" {{ old('role', $user->role) == 'cashier' ? 'selected' : '' }}>Cashier - Ruhusa Mdogo</option>
+                            <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
+                            <option value="cashier" {{ old('role', $user->role) == 'cashier' ? 'selected' : '' }}>Cashier</option>
                         </select>
                         @error('role')
                             <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
