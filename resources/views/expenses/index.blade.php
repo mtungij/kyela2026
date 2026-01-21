@@ -73,7 +73,7 @@
             
             @if($expenses->count() > 0)
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-red-600 dark:bg-red-700">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">#</th>
@@ -168,7 +168,15 @@
                 <div class="space-y-4">
                     <div>
                         <label for="category" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Aina ya Gharama</label>
-                        
+                        <select name="category" id="category" class="bg-gray-50 border border-red-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-600 dark:border-red-500 dark:placeholder-gray-400 dark:text-white" required>
+                            <option value="">Chagua aina</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Ofisi">Ofisi</option>
+                            <option value="Malipo ya Kazi">Malipo ya Kazi</option>
+                            <option value="Matengenezo">Matengenezo</option>
+                            <option value="Mawasiliano">Mawasiliano</option>
+                            <option value="Nyingine">Nyingine</option>
+                        </select>
                         <input type="text" name="category" id="category"  class="bg-gray-50 border border-red-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-600 dark:border-red-500 dark:placeholder-gray-400 dark:text-white" placeholder="Weka kiasi" required>
                         @error('category')
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -181,7 +189,7 @@
                         @error('description')
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
-                    </div>
+                    </div>s
                     
                     <div>
                         <label for="amount" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kiasi (TSh)</label>
