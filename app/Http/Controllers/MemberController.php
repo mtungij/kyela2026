@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Models\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class MemberController extends Controller
 {
@@ -17,6 +18,7 @@ class MemberController extends Controller
         $search = $request->get('search');
         
         $members = Member::query()
+            ->with('collections')
             ->when($search, function($query, $search) {
                 return $query->where('name', 'like', "%{$search}%")
                             ->orWhere('phone', 'like', "%{$search}%")
@@ -25,6 +27,9 @@ class MemberController extends Controller
             })
             ->orderBy('created_at', 'desc')
             ->paginate(10);
+
+
+          
             
         return view('member.index', compact('members'));
     }
@@ -40,64 +45,80 @@ class MemberController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'nullable|string|max:255',
-            'business_address' => 'nullable|string|max:255',
-            'amount' => 'required|numeric',
-            'type' => 'required|in:daily,weekly,monthly',
-            'number_type' => 'required|numeric|min:1',
-            'penalty_per_day' => 'nullable|numeric|min:0',
-        ]);
-        
-        // Add 255 prefix to phone if not already present
-        $phone = $validatedData['phone'];
-        if (!str_starts_with($phone, '255')) {
-            $phone = ltrim($phone, '0'); // Remove leading zero if present
-            $validatedData['phone'] = '255' . $phone;
+  public function store(Request $request)
+{
+    $validatedData = $request->validate([
+        'name' => 'required|string|max:255',
+        'phone' => 'required|string|max:20',
+        'address' => 'nullable|string|max:255',
+        'business_address' => 'nullable|string|max:255',
+        'type' => 'required|in:daily,weekly,monthly',
+        'start_date' => 'required|date',
+        'pay_type' => 'required|in:mchango_mdogo,mchango_mkubwa',
+        'number_type' => 'required|numeric|min:1',
+        'penalty_per_day' => 'nullable|numeric|min:0',
+    ]);
+
+    /* ===============================
+       SET AMOUNT BASED ON PAY TYPE
+    ================================*/
+    if ($validatedData['pay_type'] === 'mchango_mdogo') {
+        $validatedData['amount'] = 5000;
+        // Set default penalty if not provided (100% of daily amount)
+        if (!isset($validatedData['penalty_per_day']) || $validatedData['penalty_per_day'] == 0) {
+            $validatedData['penalty_per_day'] = 5000; // 100% of 5000
         }
-        
-        // Set default penalty if not provided
-        if (!isset($validatedData['penalty_per_day'])) {
-            $validatedData['penalty_per_day'] = 0;
+    } elseif ($validatedData['pay_type'] === 'mchango_mkubwa') {
+        $validatedData['amount'] = 10000;
+        // Set default penalty if not provided (100% of daily amount)
+        if (!isset($validatedData['penalty_per_day']) || $validatedData['penalty_per_day'] == 0) {
+            $validatedData['penalty_per_day'] = 10000; // 100% of 10000
         }
-        
-        DB::transaction(function () use ($validatedData) {
-            // Create member
-            $member = Member::create($validatedData);
-            
-            // Calculate total collection amount (amount * number_type)
-            $totalAmount = $member->amount * $member->number_type;
-            
-            // Create collection record with penalty tracking
-            Collection::create([
-                'member_id' => $member->id,
-                'total_amount' => $totalAmount,
-                'amount_paid' => 0,
-                'balance' => $totalAmount,
-                'total_penalty' => 0,
-                'penalty_paid' => 0,
-                'penalty_balance' => 0,
-                'last_payment_date' => now(),
-                'status' => 'pending',
-            ]);
-        });
-
-        
-
-        $phone = $validatedData['phone'];
-     $massage = "Karibu $validatedData[name] kwenye Kalumbulu Group Kikundi cha kuwezeshana. Karibu tushirikiane na kuwezeshana!";
-
-   
-
-
-        $this->sendsms($phone,$massage);
-        
-        return redirect()->route('members.index')->with('success', 'Member created successfully.'); 
     }
+
+    // Add 255 prefix to phone
+    $phone = $validatedData['phone'];
+    if (!str_starts_with($phone, '255')) {
+        $phone = ltrim($phone, '0');
+        $validatedData['phone'] = '255' . $phone;
+    }
+
+    // Calculate end_date: start_date + number_type days
+   if (isset($validatedData['start_date']) && isset($validatedData['number_type'])) {
+    $startDate = Carbon::parse($validatedData['start_date']);
+    $validatedData['end_date'] = $startDate->copy()
+        ->addDays((int)$validatedData['number_type'] - 1)
+        ->format('Y-m-d');
+}
+
+
+    DB::transaction(function () use ($validatedData) {
+
+        // Create member
+        $member = Member::create($validatedData);
+
+        // Total amount = amount * number_type
+        $totalAmount = $member->amount * $member->number_type;
+
+        Collection::create([
+            'member_id' => $member->id,
+            'total_amount' => $totalAmount,
+            'amount_paid' => 0,
+            'balance' => $totalAmount,
+            'total_penalty' => 0,
+            'penalty_paid' => 0,
+            'penalty_balance' => 0,
+            'last_payment_date' => now(),
+            'status' => 'pending',
+        ]);
+    });
+
+    $message = "Karibu {$validatedData['name']} kwenye Kalumbulu Group Kikundi cha kuwezeshana. Karibu tushirikiane na kuwezeshana!";
+    $this->sendsms($validatedData['phone'], $message);
+
+    return redirect()->route('members.index')
+        ->with('success', 'Member created successfully.');
+}
 
     /**
      * Display the specified resource.
@@ -118,30 +139,55 @@ class MemberController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'nullable|string|max:255',
-            'business_address' => 'nullable|string|max:255',
-            'amount' => 'required|numeric',
-            'type' => 'required|in:daily,weekly,monthly',
-            'number_type' => 'required|numeric|min:1',
-        ]);
-        
-        // Add 255 prefix to phone if not already present
-        $phone = $validatedData['phone'];
-        if (!str_starts_with($phone, '255')) {
-            $phone = ltrim($phone, '0');
-            $validatedData['phone'] = '255' . $phone;
-        }
-        
-        $member = Member::findOrFail($id);
-        $member->update($validatedData);
-        
-        return redirect()->route('members.index')->with('success', 'Member updated successfully.');
+  public function update(Request $request, string $id)
+{
+    $validatedData = $request->validate([
+        'name' => 'required|string|max:255',
+        'phone' => 'required|string|max:20',
+        'address' => 'nullable|string|max:255',
+        'business_address' => 'nullable|string|max:255',
+        'pay_type' => 'required|in:mchango_mdogo,mchango_mkubwa', // new field
+        'type' => 'required|in:daily,weekly,monthly',
+        'number_type' => 'required|numeric|min:1',
+    ]);
+
+    // Add 255 prefix to phone if not already present
+    $phone = $validatedData['phone'];
+    if (!str_starts_with($phone, '255')) {
+        $phone = ltrim($phone, '0');
+        $validatedData['phone'] = '255' . $phone;
     }
+
+    // Automatic amount based on pay_type
+    if ($validatedData['pay_type'] === 'mchango_mdogo') {
+        $validatedData['amount'] = 5000;
+        // Keep existing penalty or set default (100% of daily amount)
+        $member = Member::findOrFail($id);
+        if ($member->penalty_per_day == 0) {
+            $validatedData['penalty_per_day'] = 5000;
+        }
+    } elseif ($validatedData['pay_type'] === 'mchango_mkubwa') {
+        $validatedData['amount'] = 10000;
+        // Keep existing penalty or set default (100% of daily amount)
+        $member = Member::findOrFail($id);
+        if ($member->penalty_per_day == 0) {
+            $validatedData['penalty_per_day'] = 10000;
+        }
+    }
+
+    $member = Member::findOrFail($id);
+    
+    // Calculate end_date if start_date exists and number_type is provided
+    if ($member->start_date && isset($validatedData['number_type'])) {
+        $startDate = Carbon::parse($member->start_date);
+        $validatedData['end_date'] = $startDate->copy()->addDays((int)$validatedData['number_type'])->format('Y-m-d');
+    }
+    
+    $member->update($validatedData);
+
+    return redirect()->route('members.index')->with('success', 'Member updated successfully.');
+}
+
 
     /**
      * Remove the specified resource from storage.
@@ -174,6 +220,8 @@ class MemberController extends Controller
                 $collection->total_penalty = 0;
                 $collection->penalty_paid = 0;
                 $collection->penalty_balance = 0;
+                // Update last payment date to today to prevent immediate re-accumulation
+                $collection->last_payment_date = now();
                 $collection->save();
             });
             

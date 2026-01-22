@@ -48,13 +48,28 @@
            transition-shadow duration-300">
 
     <!-- Avatar -->
-    <div class="flex justify-center -mt-12">
+   <div class="flex justify-center -mt-12">
+    @if($member->pay_type == 'mchango_mdogo')
+        <img
+            class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
+                   ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
+            src="{{ asset('images/member.png') }}"
+            alt="Member - Mchango Mdogo">
+    @elseif($member->pay_type == 'mchango_mkubwa')
+        <img
+            class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
+                   ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
+            src="{{ asset('images/vip.png') }}"
+            alt="Member">
+    @else
         <img
             class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
                    ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
             src="{{ asset('images/member.png') }}"
             alt="Member">
-    </div>
+    @endif
+</div>
+
 
     <!-- Member Details -->
     <ul
@@ -76,6 +91,17 @@
             <span>{{ $member->address }}</span>
         </li>
 
+       <li class="flex justify-between px-4 py-2">
+    <span>Alianza Lini</span>
+    <span>{{ \Carbon\Carbon::parse($member->start_date)->format('d-m-Y') }}</span>
+</li>
+
+
+        <li class="flex justify-between px-4 py-2">
+            <span>Mwisho</span>
+            <span>{{ \Carbon\Carbon::parse($member->end_date)->format('d-m-Y') }}</span>
+        </li>
+
         <li class="flex justify-between px-4 py-2">
             <span>Biashara</span>
             <span>{{ $member->business_address }}</span>
@@ -86,7 +112,7 @@
             <span>{{ number_format($member->amount, 0) }}</span>
         </li>
 
-        <li class="flex justify-between px-4 py-2">
+        {{-- <li class="flex justify-between px-4 py-2">
             <span>Muda</span>
             <span>
                 @if($member->type === 'daily')
@@ -97,22 +123,39 @@
                     Kila Mwezi ({{ $member->number_type }})
                 @endif
             </span>
-        </li>
+        </li> --}}
 
         <li class="flex justify-between px-4 py-2 font-semibold">
             <span>Faini</span>
             @php
                 $collection = $member->collections->first();
-                $penaltyBalance = $collection ? $collection->getCurrentPenaltyBalance() : 0;
+                $penaltyBalance = 0;
+                $totalPenalty = 0;
+                $penaltyPaid = 0;
+                
+                if ($collection) {
+                    // Get current penalty balance (this will recalculate and save)
+                    $penaltyBalance = $collection->getCurrentPenaltyBalance();
+                    // Refresh to get updated values
+                    $collection->refresh();
+                    $totalPenalty = $collection->total_penalty;
+                    $penaltyPaid = $collection->penalty_paid;
+                }
             @endphp
 
-            @if($penaltyBalance > 0)
-                <span class="text-orange-600 dark:text-orange-400">
-                    {{ number_format($penaltyBalance) }}
-                </span>
-            @else
-                <span class="text-gray-500 dark:text-gray-400">0</span>
-            @endif
+            <div class="text-right">
+                @if($penaltyBalance > 0)
+                    <div class="text-orange-600 dark:text-orange-400 font-bold">
+                        {{ number_format($penaltyBalance, 0) }} TSh
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                        Jumla: {{ number_format($totalPenalty, 0) }} | 
+                        Imelipwa: {{ number_format($penaltyPaid, 0) }}
+                    </div>
+                @else
+                    <span class="text-gray-500 dark:text-gray-400">0</span>
+                @endif
+            </div>
         </li>
     </ul>
    @if(auth()->user()->isAdmin())
@@ -213,18 +256,42 @@
                         <label for="edit_business_address_{{ $member->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Sehemu pa Biashara</label>
                         <input type="text" name="business_address" id="edit_business_address_{{ $member->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500" value="{{ $member->business_address }}">
                     </div>
+
                     <div>
-                        <label for="edit_type_{{ $member->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Muda Kulipa</label>
-                        <select id="edit_type_{{ $member->id }}" name="type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500" required>
-                            <option value="daily" {{ $member->type == 'daily' ? 'selected' : '' }}>Kila Siku (Daily)</option>
-                            <option value="weekly" {{ $member->type == 'weekly' ? 'selected' : '' }}>Kila Wiki (Weekly)</option>
-                            <option value="monthly" {{ $member->type == 'monthly' ? 'selected' : '' }}>Kila Mwezi (Monthly)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="edit_amount_{{ $member->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kiasi Cha Kuchangia</label>
-                        <input type="number" name="amount" id="edit_amount_{{ $member->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500" value="{{ $member->amount }}" required>
-                    </div>
+    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+        Aina Ya Mchango
+    </label>
+    <select
+        name="pay_type"
+        class="pay-type-select bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+               block w-full p-2.5"
+        required
+    >
+        <option value="mchango_mdogo" {{ $member->pay_type == 'mchango_mdogo' ? 'selected' : '' }}>
+            Mchango Mdogo (5000)
+        </option>
+        <option value="mchango_mkubwa" {{ $member->pay_type == 'mchango_mkubwa' ? 'selected' : '' }}>
+            Mchango Mkubwa (10000)
+        </option>
+    </select>
+</div>
+
+                   <input type="hidden" name="type" value="daily">
+
+                  <div>
+    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+        Kiasi Cha Kuchangia
+    </label>
+    <input
+        type="number"
+        name="amount"
+        class="amount-input bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+               focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5"
+        readonly
+        value="{{ old('amount') }}"
+    >
+</div>
+
                     <div>
                         <label for="edit_number_type_{{ $member->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Idadi Ya Malipo</label>
                         <input type="number" name="number_type" id="edit_number_type_{{ $member->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500" value="{{ $member->number_type }}" required>
@@ -384,26 +451,44 @@
                             <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
                         @enderror
                     </div>
-                    <div>
-                        <label for="type" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Muda Kulipa</label>
-                        <select id="type" name="type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('type') border-red-500 @enderror">
-                            <option value="">Chagua Kiasi Cha Kulipa</option>
-                            <option value="daily" {{ old('type', 'daily') == 'daily' ? 'selected' : '' }}>Kila Siku (Daily)</option>
-                            <option value="weekly" {{ old('type') == 'weekly' ? 'selected' : '' }}>Kila Wiki (Weekly)</option>
-                            <option value="monthly" {{ old('type') == 'monthly' ? 'selected' : '' }}>Kila Mwezi (Monthly)</option>
-                        </select>
-                        @error('type')
-                            <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
 
-                     <div>
-                        <label for="business_address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kiasi Cha Kuchangia</label>
-                        <input type="number" name="amount" id="amount" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('amount') border-red-500 @enderror" placeholder="Kiasi Cha Kuchangia"  value="{{ old('amount') }}">
-                        @error('amount')
-                            <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
+                                        <div>
+    <label for="pay_type"  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Pay Type</label>
+    <select name="pay_type" id="pay_type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"  required>
+        <option value="">-- Chagua Aina Ya Mchango --</option>
+        <option value="mchango_mdogo"
+            {{ old('pay_type') == 'mchango_mdogo' ? 'selected' : '' }}>
+            Mchango Mdogo (5000 TSh)
+        </option>
+        <option value="mchango_mkubwa"
+            {{ old('pay_type') == 'mchango_mkubwa' ? 'selected' : '' }}>
+            Mchango Mkubwa (10,000 TSh)
+        </option>
+    </select>
+</div>
+                  <input type="hidden" name="type" value="daily">
+
+
+
+<div> 
+    <label for="business_address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kiasi Cha Kuchangia</label>
+
+
+                    <input
+    type="number"
+    name="amount"
+    id="amount"
+    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+           focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5
+           dark:bg-gray-700 dark:border-gray-600 dark:text-white
+           @error('amount') border-red-500 @enderror"
+    placeholder="Kiasi Cha Kuchangia"
+    value="{{ old('amount') }}"
+    readonly
+>
+   
+</div>
+
 
                     <div>
                         <label for="number_type" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Idadi Ya Malipo</label>
@@ -412,6 +497,19 @@
                             <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
                         @enderror
                     </div>
+
+
+                        <div>
+                        <label for="start_date" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Anaanza kutoa Lini</label>
+                        <input type="date" name="start_date" id="start_date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('start_date') border-red-500 @enderror" placeholder="Anza kutoa tarehe"  value="{{ old('start_date') }}">
+                        @error('start_date')
+                            <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+
+
+
 
                 </div>
                 <button type="submit" class="text-white inline-flex items-center bg-cyan-700 hover:bg-cyan-800 focus:ring-4 focus:outline-none focus:ring-cyan-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-cyan-600 dark:hover:bg-cyan-700 dark:focus:ring-cyan-800">
@@ -456,6 +554,60 @@
             }, 500); // Wait 500ms after user stops typing
         });
     });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const payTypeSelect = document.getElementById('pay_type');
+    const amountInput = document.getElementById('amount');
+
+    function updateAmount() {
+        if (payTypeSelect.value === 'mchango_mdogo') {
+            amountInput.value = 5000;
+        } else if (payTypeSelect.value === 'mchango_mkubwa') {
+            amountInput.value = 10000;
+        } else {
+            amountInput.value = '';
+        }
+    }
+
+    // On change
+    payTypeSelect.addEventListener('change', updateAmount);
+
+    // On page load (for old values / validation errors)
+    updateAmount();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    function setAmount(selectEl) {
+        const form = selectEl.closest('form');
+        const amountInput = form.querySelector('.amount-input');
+
+        if (!amountInput) return;
+
+        if (selectEl.value === 'mchango_mdogo') {
+            amountInput.value = 5000;
+        } else if (selectEl.value === 'mchango_mkubwa') {
+            amountInput.value = 10000;
+        } else {
+            amountInput.value = '';
+        }
+    }
+
+    document.querySelectorAll('.pay-type-select').forEach(select => {
+        // on change
+        select.addEventListener('change', function () {
+            setAmount(this);
+        });
+
+        // on load (edit modal default)
+        setAmount(select);
+    });
+
+});
 </script>
 
 
