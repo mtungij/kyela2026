@@ -62,8 +62,8 @@
         <flux:sidebar.nav>
             <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" current>Home</flux:sidebar.item>
                 <flux:sidebar.group   expandable
-               :expanded="false" heading="Members" class="grid">
-                <flux:sidebar.item   href="{{ route('members.index') }}" >Sajili Member</flux:sidebar.item>
+               :expanded="false" heading="Members"  class="grid">
+                <flux:sidebar.item  badge="{{ App\Models\Member::count() }}" href="{{ route('members.index') }}" >Sajili Member</flux:sidebar.item>
                 {{-- <flux:sidebar.item href="#" badge="12">Member Wote</flux:sidebar.item> --}}
         
             </flux:sidebar.group>
@@ -102,7 +102,7 @@
         {{ $slot }}
  
     @fluxScripts
-     <x-toaster-hub /> <!-- 👈 -->
+    
 <script src="../path/to/flowbite/dist/flowbite.min.js"></script>
 
     </body>

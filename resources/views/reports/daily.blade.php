@@ -1,11 +1,11 @@
 <x-layouts.app :title="__('Daily Report - Funga Hesabu')">
 
-<div class="w-full max-w-screen-xl px-4 sm:px-6 lg:px-8 py-6">
+<div class="w-full  px-4 sm:px-6 lg:px-8 py-6">
     
     <!-- Header -->
     <div class="bg-gray-100 dark:bg-gray-900 mb-6">
         <div class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white">
-            <div class="flex flex-col max-w-screen-xl px-4 mx-auto md:flex-row md:justify-between md:px-6 lg:px-8">
+            <div class="flex flex-col  px-4 mx-auto md:flex-row md:justify-between md:px-6 lg:px-8">
                 <div class="p-4 flex flex-row items-center justify-between">
                     <h1 class="text-lg font-semibold tracking-widest uppercase rounded-lg focus:outline-none focus:shadow-outline">
                         📊 Ripoti ya Siku - Funga Hesabu

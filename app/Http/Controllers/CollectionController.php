@@ -84,10 +84,21 @@ $massage = "Habari {$member->name}, tunakukumbusha katika jumla ya kiasi cha kuc
 
     public function storePayment(Request $request)
     {
+
+      $collection = \App\Models\Collection::find($request->collection_id);
+
+    $maxAmount = 0;
+
+    if ($request->payment_type === 'penalty') {
+        $maxAmount = $collection->penalty_balance; // max they can pay is remaining penalty
+    } else {
+        $maxAmount = $collection->balance; // max they can pay is remaining balance
+    }
+
         $validated = $request->validate([
             'member_id' => 'required|exists:members,id',
             'collection_id' => 'required|exists:collections,id',
-            'amount' => 'required|numeric|min:0',
+             'amount' => ['required','numeric','min:0', "max:$maxAmount"],
             'payment_date' => 'required|date',
             'payment_type' => 'nullable|in:regular,penalty',
             'notes' => 'nullable|string',
@@ -95,6 +106,9 @@ $massage = "Habari {$member->name}, tunakukumbusha katika jumla ya kiasi cha kuc
 
         \DB::transaction(function () use ($validated) {
             $collection = \App\Models\Collection::find($validated['collection_id']);
+           
+
+          
             
             // Calculate current penalty
             $penaltyBalance = $collection->getCurrentPenaltyBalance();
@@ -169,6 +183,8 @@ $massage = "Habari {$memberName}, tumepokea malipo yako ya Tsh "
             
             // Update last payment date
             $collection->last_payment_date = $validated['payment_date'];
+
+          
             
             // Update status if fully paid (both loan and penalty)
             if ($collection->balance <= 0 && $collection->penalty_balance <= 0) {

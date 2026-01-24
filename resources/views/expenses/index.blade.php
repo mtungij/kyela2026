@@ -1,6 +1,6 @@
 <x-layouts.app :title="__('Expenses Management')">
 
-<div class="w-full max-w-screen-xl px-4 sm:px-6 lg:px-8 py-6">
+<div class="w-full  px-4 sm:px-6 lg:px-8 py-6">
     
     @if(session('success'))
     <div class="bg-teal-100 border border-teal-200 text-sm text-teal-800 rounded-lg p-4 dark:bg-teal-800/10 dark:border-teal-900 dark:text-teal-500 mb-4" role="alert">
@@ -24,7 +24,7 @@
     <!-- Header -->
     <div class="bg-gray-100 dark:bg-gray-900 mb-6">
         <div class="w-full bg-red-600 text-white">
-            <div class="flex flex-col max-w-screen-xl px-4 mx-auto md:flex-row md:justify-between md:px-6 lg:px-8">
+            <div class="flex flex-col  px-4 mx-auto md:flex-row md:justify-between md:px-6 lg:px-8">
                 <div class="p-4 flex flex-row items-center justify-between">
                     <h1 class="text-lg font-semibold tracking-widest uppercase rounded-lg focus:outline-none focus:shadow-outline">
                         Matumizi
@@ -189,7 +189,7 @@
                         @error('description')
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
-                    </div>s
+                    </div>
                     
                     <div>
                         <label for="amount" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kiasi (TSh)</label>

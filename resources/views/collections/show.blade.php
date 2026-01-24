@@ -1,6 +1,6 @@
 <x-layouts.app :title="__('Malipo - ' . $member->name)">
 
-<div class="w-full max-w-screen-xl px-4 sm:px-6 lg:px-8 py-6">
+<div class="w-full px-4 sm:px-6 lg:px-8 py-6">
     @if(session('success'))
     <div class="bg-teal-100 border border-teal-200 text-sm text-teal-800 rounded-lg p-4 dark:bg-teal-800/10 dark:border-teal-900 dark:text-teal-500 mb-4" role="alert">
         <div class="flex">
@@ -42,9 +42,25 @@
                 <div class="bg-white p-4 border-t-4 border-cyan-500 rounded-lg shadow-md dark:bg-gray-800 dark:border-cyan-600">
                     <div class="image overflow-hidden mb-4 text-center">
                         <div class="w-32 h-32 mx-auto rounded-full bg-cyan-100 dark:bg-cyan-900 flex items-center justify-center border-4 border-cyan-400">
-                            <span class="text-4xl font-bold text-cyan-600 dark:text-cyan-400">
-                                {{ strtoupper(substr($member->name, 0, 1)) }}
-                            </span>
+                           @if($member->pay_type == 'mchango_mdogo')
+        <img
+            class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
+                   ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
+            src="{{ asset('images/member.png') }}"
+            alt="Member - Mchango Mdogo">
+    @elseif($member->pay_type == 'mchango_mkubwa')
+        <img
+            class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
+                   ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
+            src="{{ asset('images/vip.png') }}"
+            alt="Member">
+    @else
+        <img
+            class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
+                   ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
+            src="{{ asset('images/member.png') }}"
+            alt="Member">
+    @endif
                         </div>
                     </div>
                     <h1 class="text-cyan-600 dark:text-cyan-400 font-bold text-xl text-center uppercase whitespace-nowrap overflow-hidden truncate">
@@ -66,7 +82,7 @@
                         <li class="flex items-center justify-between py-2 px-3">
                             <span class="font-bold text-base">Hali</span>
                             <span class="px-3 py-1 rounded-full text-xs font-medium {{ $collection->status === 'completed' ? 'bg-green-500 text-white' : ($collection->status === 'partial' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white') }}">
-                                {{ $collection->status === 'completed' ? 'Kamili' : ($collection->status === 'partial' ? 'Inaendelea' : 'Hajaanza') }}
+                                {{ $collection->status === 'completed' ? 'Kamaliza' : ($collection->status === 'partial' ? 'Inaendelea' : 'Hajaanza') }}
                             </span>
                         </li>
                         <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
@@ -139,7 +155,7 @@
                         <button type="button" onclick="openPaymentModal('penalty')" class="inline-flex items-center px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all dark:bg-orange-600 dark:hover:bg-orange-700">
                             ⚠️ Lipa Faini
                         </button>
-                        @else
+                        @elseif($collection->balance > 0)
                         <button type="button" onclick="openPaymentModal('regular')" class="inline-flex items-center px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all dark:bg-cyan-600 dark:hover:bg-cyan-700">
                             💰 Fanya Malipo
                         </button>
