@@ -18,10 +18,12 @@
             border-radius: 6px;
         }
 
-        .report-header img {
-            height: 60px;
-            margin-bottom: 8px;
-        }
+     .report-header img {
+    height: 35px;   /* smaller logo */
+    width: auto;    /* keep aspect ratio */
+    margin-bottom: 6px;
+}
+
 
         .report-header h1 {
             font-size: 20px;
