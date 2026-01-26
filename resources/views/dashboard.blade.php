@@ -57,7 +57,7 @@
                 </p>
 
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
-                    TZS {{ number_format($expectedCollectionToday, 2) }}
+                     {{ number_format($expectedCollectionToday, 2) }}
                 </h2>
 
                 {{-- <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">
@@ -101,7 +101,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm opacity-70">Ukusanyaji Uliokusanywa Leo</p>
-                    <h2 class="text-3xl font-bold">TZS {{ number_format($collectionCollectedToday, 2) }}</h2>
+                    <h2 class="text-3xl font-bold">{{ number_format($collectionCollectedToday, 2) }}</h2>
                     <p class="text-xs mt-1 opacity-80">Tazama ripoti ya malipo</p>
                 </div>
 
@@ -167,7 +167,7 @@
                     Malipo Yaliyokusanywa Mwezi Huu
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
-                    TZS {{ number_format($paymentsCollectedThisMonth, 2) }}
+                     {{ number_format($paymentsCollectedThisMonth, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-green-600 dark:text-green-400">
                     Tazama ripoti ya malipo
@@ -231,7 +231,7 @@
                  Malipo Yanayohitajika Wiki Hii
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
-                    TZS {{ number_format($paymentsNeededThisWeek, 2) }}
+                     {{ number_format($paymentsNeededThisWeek, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
                     Tazama makusanyo
@@ -263,7 +263,7 @@
                     Matumizi Leo
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
-                    TZS {{ number_format($expensesToday, 2) }}
+                     {{ number_format($expensesToday, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-red-600 dark:text-red-400">
                     Tazama orodha ya matumizi
@@ -294,7 +294,7 @@
                     Matumizi Mwezi Huu
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
-                    TZS {{ number_format($expensesThisMonth, 2) }}
+                     {{ number_format($expensesThisMonth, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-purple-600 dark:text-purple-400">
                     Tazama orodha ya matumizi
@@ -326,7 +326,7 @@
                     Faini Zilizolipwa Leo
                 </p>
                 <h2 class="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
-                    TZS {{ number_format($penaltiesPaidToday, 2) }}
+                     {{ number_format($penaltiesPaidToday, 2) }}
                 </h2>
                 <p class="mt-1 text-xs text-orange-600 dark:text-orange-400">
                     Bonyeza kuona maelezo
