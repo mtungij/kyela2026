@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Models\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 
 class MemberController extends Controller
@@ -16,6 +17,7 @@ class MemberController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
+        $payType = $request->get('pay_type');
         
         $members = Member::query()
             ->with('collections')
@@ -25,14 +27,54 @@ class MemberController extends Controller
                             ->orWhere('address', 'like', "%{$search}%")
                             ->orWhere('business_address', 'like', "%{$search}%");
             })
+
+             ->when($payType, function($query, $payType) {
+        return $query->where('pay_type', $payType);
+    })
+
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
 
           
             
-        return view('member.index', compact('members'));
+        return view('member.index', compact('members','payType'));
     }
+
+
+
+  public function downloadPdf(Request $request)
+   {
+        $search = $request->get('search');
+        $payType = $request->get('pay_type');
+
+       $members = Member::query()
+           ->with('collections')
+          ->when($search, function($query, $search) {
+                return $query->where('name', 'like', "%{$search}%")
+                             ->orWhere('phone', 'like', "%{$search}%")
+                             ->orWhere('address', 'like', "%{$search}%")
+                             ->orWhere('business_address', 'like', "%{$search}%");
+            })
+            ->when($payType, function($query, $payType) {
+                return $query->where('pay_type', $payType);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $data = [
+            'members' => $members,
+            'payType' => $payType,
+            'search' => $search,
+        ];
+
+        $pdf = PDF::loadView('member.pdf', $data)->setPaper('a4', 'landscape');
+
+        $filename = 'members_' . ($payType ?: 'all') . '_' . now()->format('Ymd_His') . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
 
     /**
      * Show the form for creating a new resource.

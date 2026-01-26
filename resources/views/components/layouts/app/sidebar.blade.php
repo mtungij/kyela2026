@@ -51,8 +51,8 @@
         <flux:sidebar.header>
             <flux:sidebar.brand
                 href="#"
-                logo="https://fluxui.dev/img/demo/logo.png"
-                logo:dark="https://fluxui.dev/img/demo/dark-mode-logo.png"
+                logo="{{ asset('images/logo.jpeg') }}"
+                logo:dark="{{ asset('images/logo-dark.jpeg') }}"
                 name="KWS"
             />
 
@@ -78,7 +78,7 @@
                 <flux:sidebar.item href="{{ route('unpaid.report') }}">Ambao Hawajalipa</flux:sidebar.item>
                 <flux:sidebar.item href="{{ route('payments.report') }}">Ambao Wamelipa</flux:sidebar.item>
                 <flux:sidebar.item href="{{ route('penalties.report') }}">Ambao Waliolipa Faini</flux:sidebar.item>
-                 <flux:sidebar.item href="#">Hesabu Za Muda</flux:sidebar.item>
+             
             </flux:sidebar.group>
 
             <flux:sidebar.group   expandable

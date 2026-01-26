@@ -93,11 +93,11 @@
                         <th class="px-6 py-3 text-right dark:text-black">Jumla</th>
                         <th class="px-6 py-3 text-right dark:text-black">Kulipwa</th>
                         <th class="px-6 py-3 text-right dark:text-black">Baki</th>
-                        <th class="px-6 py-3">Hali</th>
+                      
                     </tr>
                 </thead>
 
-                <tbody class="divide-y bg-cyan-900 dark:divide-gray-700">
+                <tbody class="divide-y text-white bg-cyan-900 dark:divide-gray-700">
                     @forelse($collections as $collection)
                         <tr class="">
 
@@ -107,7 +107,7 @@
 
                             <td class="px-6 py-3 font-medium">
                                 <a href="{{ route('collections.show', $collection->member->id) }}"
-                                   class="text-red-600 hover:underline">
+                                   class="text-white hover:underline">
                                     {{ $collection->member->name }}
                                 </a>
                             </td>
@@ -120,7 +120,7 @@
                                 {{ number_format($collection->total_amount, 0) }}
                             </td>
 
-                            <td class="px-6 py-3 text-right text-blue-600">
+                            <td class="px-6 py-3 text-right text-white">
                                 {{ number_format($collection->amount_paid, 0) }}
                             </td>
 
@@ -128,17 +128,7 @@
                                 {{ number_format($collection->balance, 0) }}
                             </td>
 
-                            <td class="px-6 py-3">
-                                @if($collection->balance > $collection->total_amount * 0.5)
-                                    <span class="px-2 py-1 text-xs bg-red-500 text-white rounded-full">
-                                        Deni Kubwa
-                                    </span>
-                                @elseif($collection->balance > 0)
-                                    <span class="px-2 py-1 text-xs bg-yellow-500 text-white rounded-full">
-                                        Deni Kidogo
-                                    </span>
-                                @endif
-                            </td>
+                          
                         </tr>
                     @empty
                         <tr>

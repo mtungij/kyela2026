@@ -47,11 +47,17 @@
 
             
 
-            <div class="flex items-center justify-end">
-                <flux:button variant="primary" type="submit" class="w-full" data-test="login-button">
-                    {{ __('Log in') }}
-                </flux:button>
-            </div>
+          <div class="flex items-center justify-end">
+    <flux:button
+        variant="primary"
+        type="submit"
+        class="w-full bg-[#0B3D2E] hover:bg-[#093327] text-white transition-colors"
+        data-test="login-button"
+    >
+        {{ __('Log in') }}
+    </flux:button>
+</div>
+
         </form>
 
       

@@ -34,7 +34,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('member/{id}',[MemberController::class,'update'])->name('members.update');
     Route::delete('member/{id}',[MemberController::class,'destroy'])->name('members.destroy');
     Route::post('member/{id}/forgive-penalty',[MemberController::class,'forgivePenalty'])->name('members.forgive-penalty');
-    
+   Route::get('member/download-pdf', [MemberController::class, 'downloadPdf'])->name('members.download-pdf');
 
     Route::get('collections/index',[CollectionController::class,'index'])->name('collections.index');
     Route::get('collections/{member}',[CollectionController::class,'show'])->name('collections.show');
