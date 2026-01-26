@@ -1,10 +1,12 @@
 <x-layouts.auth>
-    <div
-        class="flex flex-col gap-6 max-w-md mx-auto mt-10 p-6
-               bg-white dark:bg-gray-900
-               rounded-lg shadow-md
-               border border-gray-300 dark:border-gray-700"
-    >
+  <div
+    class="flex flex-col gap-6 max-w-md mx-auto mt-10 p-6
+           bg-white dark:bg-gray-900
+           rounded-lg shadow-md
+           border border-gray-300 dark:border-gray-700
+           overflow-hidden"
+>
+
 
         <div class="flex justify-center mb-4">
             <img
