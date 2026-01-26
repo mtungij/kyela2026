@@ -19,8 +19,8 @@
         }
 
    .report-header img {
-    height: 25px;
-    width: auto;
+    height: 10px;
+    width: 10px;
     margin-bottom: 4px;
 }
 
@@ -124,6 +124,31 @@
         </tr>
     @endforeach
 </tbody>
+
+
+@php
+    $totalKiasi = 0;
+    $totalPaid = 0;
+    $totalBalance = 0;
+    foreach($members as $m) {
+        $collection = $m->collections->first();
+        $amountPaid = $collection ? $collection->amount_paid : 0;
+        $balance = $collection ? $collection->balance : ($m->amount * ($m->number_type ?? 1));
+        $totalKiasi += $m->amount;
+        $totalPaid += $amountPaid;
+        $totalBalance += $balance;
+    }
+@endphp
+
+<tfoot>
+    <tr style="font-weight:700; background:#f8f9fb">
+        <td colspan="3" style="text-align:right"><b>Jumla</b></td>
+        <td><b>{{ number_format($totalKiasi, 0) }}</b></td>
+        <td><b>{{ number_format($totalPaid, 0) }}</b></td>
+        <td><b>{{ number_format($totalBalance, 0) }}</b></td>
+        <td colspan="4"></td>
+    </tr>
+</tfoot>
 
     </table>
 
