@@ -114,7 +114,7 @@
 <body>
     <div class="header">
         <h1>Ripoti Ya Faini</h1>
-        <p>Ambao Waliooza - Habari ya Malipo</p>
+     
     </div>
 
     <div class="date-range">
@@ -131,10 +131,7 @@
                 <div class="label">Faini Zilizolipwa</div>
                 <div class="value">{{ number_format($summary['total_penalty_paid'], 0) }}</div>
             </div>
-            <div class="summary-item">
-                <div class="label">Faini Iliyobaki</div>
-                <div class="value">{{ number_format($summary['total_penalty_balance'], 0) }}</div>
-            </div>
+          
         </div>
 
         <table>
@@ -145,7 +142,7 @@
                     <th>Simu</th>
                     <th class="text-right">Jumla ya Faini</th>
                     <th class="text-right">Zilizolipwa</th>
-                    <th class="text-right">Iliyobaki</th>
+                  
                 </tr>
             </thead>
             <tbody>
@@ -156,7 +153,7 @@
                         <td>{{ $collection->member->phone }}</td>
                         <td class="text-right amount">{{ number_format($collection->total_penalty, 0) }}</td>
                         <td class="text-right amount">{{ number_format($collection->penalty_paid, 0) }}</td>
-                        <td class="text-right amount-balance">{{ number_format($collection->penalty_balance, 0) }}</td>
+
                     </tr>
                 @endforeach
             </tbody>

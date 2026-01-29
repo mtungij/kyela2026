@@ -16,15 +16,24 @@ class PaymentReportController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Payment::with(['member', 'user', 'collection']);
+        $query = Payment::with(['member', 'user', 'collection'])
+            ->where('payment_type', 'regular'); // Only regular payments
 
         // Default to today's date
         $fromDate = $request->get('from_date', now()->toDateString());
         $toDate = $request->get('to_date', now()->toDateString());
+        $payType = $request->get('pay_type');
 
         // Filter by date range
         if ($fromDate && $toDate) {
             $query->whereBetween('payment_date', [$fromDate, $toDate]);
+        }
+
+        // Filter by pay_type
+        if ($payType) {
+            $query->whereHas('member', function ($q) use ($payType) {
+                $q->where('pay_type', $payType);
+            });
         }
 
         // Get distinct members who made payments in the period
@@ -32,15 +41,24 @@ class PaymentReportController extends Controller
             ->paginate(15);
 
         // Calculate summary statistics
+        $summaryQuery = Payment::where('payment_type', 'regular')
+            ->whereBetween('payment_date', [$fromDate, $toDate]);
+        
+        if ($payType) {
+            $summaryQuery->whereHas('member', function ($q) use ($payType) {
+                $q->where('pay_type', $payType);
+            });
+        }
+        
         $summary = [
-            'total_payments' => Payment::whereBetween('payment_date', [$fromDate, $toDate])->count(),
-            'total_amount' => Payment::whereBetween('payment_date', [$fromDate, $toDate])->sum('amount'),
-            'total_members' => Payment::whereBetween('payment_date', [$fromDate, $toDate])
-                ->distinct('member_id')
-                ->count('member_id'),
+            'total_payments' => $summaryQuery->count(),
+            'total_amount' => $summaryQuery->sum('amount'),
+            'total_members' => $summaryQuery->distinct('member_id')->count('member_id'),
         ];
 
-        return view('payments.report', compact('payments', 'fromDate', 'toDate', 'summary'));
+        $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
+
+        return view('payments.report', compact('payments', 'fromDate', 'toDate', 'summary', 'payType', 'payTypeLabel'));
     }
 
     /**
@@ -50,12 +68,21 @@ class PaymentReportController extends Controller
     {
         $fromDate = $request->get('from_date', now()->toDateString());
         $toDate = $request->get('to_date', now()->toDateString());
+        $payType = $request->get('pay_type');
 
-        $query = Payment::with(['member', 'user', 'collection']);
+        $query = Payment::with(['member', 'user', 'collection'])
+            ->where('payment_type', 'regular');
 
         // Filter by date range
         if ($fromDate && $toDate) {
             $query->whereBetween('payment_date', [$fromDate, $toDate]);
+        }
+
+        // Filter by pay_type
+        if ($payType) {
+            $query->whereHas('member', function ($q) use ($payType) {
+                $q->where('pay_type', $payType);
+            });
         }
 
         $payments = $query->orderBy('payment_date', 'desc')->get();
@@ -67,9 +94,13 @@ class PaymentReportController extends Controller
             'total_members' => $payments->pluck('member_id')->unique()->count(),
         ];
 
-        $pdf = Pdf::loadView('payments.pdf', compact('payments', 'fromDate', 'toDate', 'summary'));
+        $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
+
+        $pdf = Pdf::loadView('payments.pdf', compact('payments', 'fromDate', 'toDate', 'summary', 'payType', 'payTypeLabel'));
         
-        return $pdf->download('Ripoti_Ya_Malipo_' . $fromDate . '_' . $toDate . '.pdf');
+        $filename = 'Ripoti_Ya_Malipo_' . $fromDate . '_' . $toDate . ($payType ? '_' . $payType : '') . '.pdf';
+        
+        return $pdf->download($filename);
     }
 
     /**
@@ -183,6 +214,7 @@ public function unpaidReport(Request $request)
 {
     // Tarehe ya kuchuja (default = leo)
     $date = $request->get('date', now()->toDateString());
+    $payType = $request->get('pay_type');
 
     $collections = Collection::with('member')
         ->where('balance', '>', 0)
@@ -192,7 +224,12 @@ public function unpaidReport(Request $request)
             $q->whereDate('payment_date', $date);
         })
 
-      
+        // Filter by pay_type
+        ->when($payType, function ($query) use ($payType) {
+            $query->whereHas('member', function ($q) use ($payType) {
+                $q->where('pay_type', $payType);
+            });
+        })
 
         ->orderBy('balance', 'desc')
         ->paginate(15);
@@ -204,7 +241,9 @@ public function unpaidReport(Request $request)
         'total_amount_paid' => 0,
     ];
 
-    return view('unpaid.report', compact('collections', 'date', 'summary'));
+    $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
+
+    return view('unpaid.report', compact('collections', 'date', 'summary', 'payType', 'payTypeLabel'));
 }
 
     /**
@@ -214,12 +253,20 @@ public function unpaidReport(Request $request)
     {
         $fromDate = $request->get('from_date', now()->toDateString());
         $toDate = $request->get('to_date', now()->toDateString());
+        $payType = $request->get('pay_type');
 
         $query = Collection::with(['member'])
             ->where('balance', '>', 0);
 
         if ($fromDate && $toDate) {
             $query->whereBetween('created_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
+        }
+
+        // Filter by pay_type
+        if ($payType) {
+            $query->whereHas('member', function ($q) use ($payType) {
+                $q->where('pay_type', $payType);
+            });
         }
 
         $collections = $query->orderBy('balance', 'desc')->get();
@@ -231,8 +278,12 @@ public function unpaidReport(Request $request)
             'total_amount_paid' => $collections->sum('amount_paid'),
         ];
 
-        $pdf = Pdf::loadView('unpaid.pdf', compact('collections', 'fromDate', 'toDate', 'summary'));
+        $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
+
+        $pdf = Pdf::loadView('unpaid.pdf', compact('collections', 'fromDate', 'toDate', 'summary', 'payType', 'payTypeLabel'));
         
-        return $pdf->download('Ripoti_Ya_Hawajalipa_' . $fromDate . '_' . $toDate . '.pdf');
+        $filename = 'Ripoti_Ya_Hawajalipa_' . $fromDate . '_' . $toDate . ($payType ? '_' . $payType : '') . '.pdf';
+        
+        return $pdf->download($filename);
     }
 }

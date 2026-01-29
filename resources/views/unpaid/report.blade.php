@@ -13,7 +13,7 @@
     <div class="mb-6">
         <div class="bg-red-600 text-white p-4 rounded-lg">
             <h1 class="text-lg font-semibold uppercase">
-                Ambao Hawajalipa (Deni Liliopo)
+                Ambao Hawajalipa - {{ $payTypeLabel ?? 'Wote' }}
             </h1>
         </div>
     </div>
@@ -21,7 +21,7 @@
     {{-- Filter Form (Single Date) --}}
     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6">
         <form method="GET" action="{{ route('unpaid.report') }}">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
                 <div>
                     <label class="block text-sm font-medium mb-2">
@@ -35,7 +35,21 @@
                     >
                 </div>
 
-                <div class="flex items-end gap-2">
+                <div>
+                    <label class="block text-sm font-medium mb-2">
+                        Aina ya Mchango
+                    </label>
+                    <select
+                        name="pay_type"
+                        class="w-full px-4 py-2 border rounded-lg"
+                    >
+                        <option value="" {{ !isset($payType) ? 'selected' : '' }}>Wote</option>
+                        <option value="mchango_mdogo" {{ isset($payType) && $payType === 'mchango_mdogo' ? 'selected' : '' }}>Mchango Mdogo</option>
+                        <option value="mchango_mkubwa" {{ isset($payType) && $payType === 'mchango_mkubwa' ? 'selected' : '' }}>Mchango Mkubwa</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end gap-2 md:col-span-2">
                     <button
                         type="submit"
                         class="px-4 py-2 bg-red-600 text-white rounded-lg"
@@ -44,7 +58,7 @@
                     </button>
 
                     <a
-                        href="{{ route('unpaid.download-pdf', ['date' => $date]) }}"
+                        href="{{ route('unpaid.download-pdf', ['date' => $date, 'pay_type' => $payType ?? null]) }}"
                         class="px-4 py-2 bg-orange-600 text-white rounded-lg"
                     >
                         PDF

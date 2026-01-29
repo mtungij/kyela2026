@@ -23,10 +23,26 @@
                 <input type="date" name="date" id="date" value="{{ $date->format('Y-m-d') }}" 
                     class="bg-gray-50 border border-cyan-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:placeholder-gray-400 dark:text-white">
             </div>
+            <div class="w-full sm:w-auto">
+                <label for="pay_type" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Aina ya Mchango</label>
+                <select name="pay_type" id="pay_type" 
+                    class="bg-gray-50 border border-cyan-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-cyan-600 dark:text-white">
+                    <option value="" {{ request('pay_type') === null ? 'selected' : '' }}>Zote</option>
+                    <option value="mchango_mdogo" {{ request('pay_type') === 'mchango_mdogo' ? 'selected' : '' }}>Mchango Mdogo</option>
+                    <option value="mchango_mkubwa" {{ request('pay_type') === 'mchango_mkubwa' ? 'selected' : '' }}>Mchango Mkubwa</option>
+                </select>
+            </div>
             <button type="submit" class="w-full sm:w-auto text-white bg-cyan-700 hover:bg-cyan-800 focus:ring-4 focus:ring-cyan-300 font-medium rounded-lg text-sm px-6 py-2.5 dark:bg-cyan-600 dark:hover:bg-cyan-700 focus:outline-none dark:focus:ring-cyan-800">
                 Tazama Ripoti
             </button>
-            @if($date->format('Y-m-d') != today()->format('Y-m-d'))
+            <a href="{{ route('daily.report.download-pdf', ['date' => request('date', today()->format('Y-m-d')), 'pay_type' => request('pay_type')]) }}" 
+               class="w-full sm:w-auto text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-6 py-2.5 dark:bg-red-500 dark:hover:bg-red-600 focus:outline-none dark:focus:ring-red-800 flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                PDF
+            </a>
+            @if($date->format('Y-m-d') != today()->format('Y-m-d') || request('pay_type'))
             <a href="{{ route('daily.report') }}" class="w-full sm:w-auto text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 focus:ring-4 focus:ring-gray-200 font-medium rounded-lg text-sm px-6 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700">
                 Leo
             </a>

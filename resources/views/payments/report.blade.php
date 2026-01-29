@@ -26,7 +26,7 @@
             <div class="flex flex-col max-w-screen-xl px-4 mx-auto md:flex-row md:justify-between md:px-6 lg:px-8">
                 <div class="p-4 flex flex-row items-center justify-between w-full">
                     <h1 class="text-lg font-semibold tracking-widest uppercase rounded-lg focus:outline-none focus:shadow-outline">
-                        Ambao Wamelipa - Ripoti Ya Malipo
+                        Ambao Wamelipa - {{ $payTypeLabel ?? 'Wote' }}
                     </h1>
                 </div>
             </div>
@@ -36,7 +36,7 @@
     <!-- Filter Form -->
     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6">
         <form method="GET" action="{{ route('payments.report') }}" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <!-- From Date -->
                 <div>
                     <label for="from_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -65,6 +65,22 @@
                     />
                 </div>
 
+                <!-- Pay Type -->
+                <div>
+                    <label for="pay_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Aina ya Mchango
+                    </label>
+                    <select 
+                        name="pay_type" 
+                        id="pay_type"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-700 dark:text-white"
+                    >
+                        <option value="" {{ !isset($payType) ? 'selected' : '' }}>Wote</option>
+                        <option value="mchango_mdogo" {{ isset($payType) && $payType === 'mchango_mdogo' ? 'selected' : '' }}>Mchango Mdogo</option>
+                        <option value="mchango_mkubwa" {{ isset($payType) && $payType === 'mchango_mkubwa' ? 'selected' : '' }}>Mchango Mkubwa</option>
+                    </select>
+                </div>
+
                 <!-- Action Buttons -->
                 <div class="flex items-end gap-2">
                     <button 
@@ -74,7 +90,7 @@
                         Chafya
                     </button>
                     <a 
-                        href="{{ route('payments.download-pdf', ['from_date' => $fromDate, 'to_date' => $toDate]) }}"
+                        href="{{ route('payments.download-pdf', ['from_date' => $fromDate, 'to_date' => $toDate, 'pay_type' => $payType ?? null]) }}"
                         class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

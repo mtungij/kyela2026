@@ -75,8 +75,14 @@
     :expanded="false" heading="Reports" icon="chart-bar" class="grid">
                 <flux:sidebar.item href="{{ route('daily.report') }}">Funga Hesabu</flux:sidebar.item>
    
-                <flux:sidebar.item href="{{ route('unpaid.report') }}">Ambao Hawajalipa</flux:sidebar.item>
-                <flux:sidebar.item href="{{ route('payments.report') }}">Ambao Wamelipa</flux:sidebar.item>
+                <flux:sidebar.item href="{{ route('unpaid.report') }}">Ambao Hawajalipa (Wote)</flux:sidebar.item>
+                <flux:sidebar.item href="{{ route('unpaid.report', ['pay_type' => 'mchango_mdogo']) }}">Hawajalipa - Mdogo</flux:sidebar.item>
+                <flux:sidebar.item href="{{ route('unpaid.report', ['pay_type' => 'mchango_mkubwa']) }}">Hawajalipa - Mkubwa</flux:sidebar.item>
+                
+                <flux:sidebar.item href="{{ route('payments.report') }}">Ambao Wamelipa (Wote)</flux:sidebar.item>
+                <flux:sidebar.item href="{{ route('payments.report', ['pay_type' => 'mchango_mdogo']) }}">Wamelipa - Mdogo</flux:sidebar.item>
+                <flux:sidebar.item href="{{ route('payments.report', ['pay_type' => 'mchango_mkubwa']) }}">Wamelipa - Mkubwa</flux:sidebar.item>
+                
                 <flux:sidebar.item href="{{ route('penalties.report') }}">Ambao Waliolipa Faini</flux:sidebar.item>
              
             </flux:sidebar.group>

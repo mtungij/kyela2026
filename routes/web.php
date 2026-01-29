@@ -45,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('payments/{paymentId}', [PaymentReportController::class, 'deletePayment'])->name('payments.delete');
     
     Route::get('daily-report', [DailyReportController::class, 'index'])->name('daily.report');
+    Route::get('daily-report/download-pdf', [DailyReportController::class, 'downloadPdf'])->name('daily.report.download-pdf');
     
     Route::get('penalties/report', [PaymentReportController::class, 'penaltyReport'])->name('penalties.report');
     Route::get('penalties/download-pdf', [PaymentReportController::class, 'penaltyDownloadPdf'])->name('penalties.download-pdf');

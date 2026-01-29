@@ -101,11 +101,7 @@
             <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ number_format($summary['total_penalty_paid'], 0) }}</div>
         </div>
 
-        <!-- Total Penalty Balance -->
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border-l-4 border-red-500">
-            <div class="text-sm text-gray-600 dark:text-gray-400 font-medium">Jumla ya Faini Iliyobaki</div>
-            <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ number_format($summary['total_penalty_balance'], 0) }}</div>
-        </div>
+    
     </div>
 
     <!-- Penalties Table -->
@@ -116,10 +112,10 @@
                     <tr>
                         <th class="px-6 py-3 border-b dark:border-gray-700">Jina la Mwanachama</th>
                         <th class="px-6 py-3 border-b dark:border-gray-700">Simu</th>
-                        <th class="px-6 py-3 border-b dark:border-gray-700 text-right">Jumla ya Faini</th>
+
                         <th class="px-6 py-3 border-b dark:border-gray-700 text-right">Faini Zilizolipwa</th>
-                        <th class="px-6 py-3 border-b dark:border-gray-700 text-right">Faini Iliyobaki</th>
-                        <th class="px-6 py-3 border-b dark:border-gray-700">Hali</th>
+                      
+                        
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -133,24 +129,12 @@
                             <td class="px-6 py-3">
                                 {{ $collection->member->phone }}
                             </td>
-                            <td class="px-6 py-3 text-right font-semibold text-orange-600 dark:text-orange-400">
-                                {{ number_format($collection->total_penalty, 0) }}
-                            </td>
+                          
                             <td class="px-6 py-3 text-right font-semibold text-green-600 dark:text-green-400">
                                 {{ number_format($collection->penalty_paid, 0) }}
                             </td>
-                            <td class="px-6 py-3 text-right font-semibold text-red-600 dark:text-red-400">
-                                {{ number_format($collection->penalty_balance, 0) }}
-                            </td>
-                            <td class="px-6 py-3">
-                                @if($collection->penalty_balance <= 0)
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-500 text-white">Malipo Kamili</span>
-                                @elseif($collection->penalty_paid > 0)
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500 text-white">Inaendelea</span>
-                                @else
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-red-500 text-white">Haujajipa</span>
-                                @endif
-                            </td>
+                          
+                          
                         </tr>
                     @empty
                         <tr>
