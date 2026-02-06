@@ -29,6 +29,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/password', Password::class)->name('user-password.edit');
     Route::get('settings/appearance', Appearance::class)->name('appearance.edit');
     
+    Route::get('mchango_mdogo', [MemberController::class, 'index'])
+        ->defaults('pay_type', 'mchango_mdogo')
+        ->name('members.index.mdogo');
+    Route::get('mchango_mkubwa', [MemberController::class, 'index'])
+        ->defaults('pay_type', 'mchango_mkubwa')
+        ->name('members.index.mkubwa');
     Route::get('member/index',[MemberController::class,'index'])->name('members.index');
     Route::post('member/store',[MemberController::class,'store'])->name('members.store');
     Route::put('member/{id}',[MemberController::class,'update'])->name('members.update');

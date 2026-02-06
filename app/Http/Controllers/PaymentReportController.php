@@ -153,6 +153,8 @@ class PaymentReportController extends Controller
         $query = Collection::with(['member'])
             ->where('penalty_paid', '>', 0);
 
+        $payType = $request->get('pay_type');
+
         // Default to today's date
         $fromDate = $request->get('from_date', now()->toDateString());
         $toDate = $request->get('to_date', now()->toDateString());
@@ -162,20 +164,33 @@ class PaymentReportController extends Controller
             $query->whereBetween('updated_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
         }
 
+        if ($payType) {
+            $query->whereHas('member', function ($q) use ($payType) {
+                $q->where('pay_type', $payType);
+            });
+        }
+
         $collections = $query->orderBy('updated_at', 'desc')->paginate(15);
 
         // Calculate summary statistics
+        $summaryQuery = Collection::where('penalty_paid', '>', 0)
+            ->whereBetween('updated_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
+
+        if ($payType) {
+            $summaryQuery->whereHas('member', function ($q) use ($payType) {
+                $q->where('pay_type', $payType);
+            });
+        }
+
         $summary = [
             'total_members' => $collections->count(),
-            'total_penalty_paid' => Collection::where('penalty_paid', '>', 0)
-                ->whereBetween('updated_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59'])
-                ->sum('penalty_paid'),
-            'total_penalty_balance' => Collection::where('penalty_paid', '>', 0)
-                ->whereBetween('updated_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59'])
-                ->sum('penalty_balance'),
+            'total_penalty_paid' => $summaryQuery->sum('penalty_paid'),
+            'total_penalty_balance' => $summaryQuery->sum('penalty_balance'),
         ];
 
-        return view('penalties.report', compact('collections', 'fromDate', 'toDate', 'summary'));
+        $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
+
+        return view('penalties.report', compact('collections', 'fromDate', 'toDate', 'summary', 'payType', 'payTypeLabel'));
     }
 
     /**
@@ -185,12 +200,19 @@ class PaymentReportController extends Controller
     {
         $fromDate = $request->get('from_date', now()->toDateString());
         $toDate = $request->get('to_date', now()->toDateString());
+        $payType = $request->get('pay_type');
 
         $query = Collection::with(['member'])
             ->where('penalty_paid', '>', 0);
 
         if ($fromDate && $toDate) {
             $query->whereBetween('updated_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
+        }
+
+        if ($payType) {
+            $query->whereHas('member', function ($q) use ($payType) {
+                $q->where('pay_type', $payType);
+            });
         }
 
         $collections = $query->orderBy('updated_at', 'desc')->get();
@@ -202,7 +224,9 @@ class PaymentReportController extends Controller
             'total_penalty_balance' => $collections->sum('penalty_balance'),
         ];
 
-        $pdf = Pdf::loadView('penalties.pdf', compact('collections', 'fromDate', 'toDate', 'summary'));
+        $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
+
+        $pdf = Pdf::loadView('penalties.pdf', compact('collections', 'fromDate', 'toDate', 'summary', 'payType', 'payTypeLabel'));
         
         return $pdf->download('Ripoti_Ya_Faini_' . $fromDate . '_' . $toDate . '.pdf');
     }

@@ -12,13 +12,32 @@ class CollectionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('collections.index');
+        $payType = $request->session()->get('pay_type');
+
+        if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
+            $payType = null;
+        }
+
+        $members = Member::query()
+            ->when($payType, function ($query, $payType) {
+                return $query->where('pay_type', $payType);
+            })
+            ->orderBy('name')
+            ->get();
+
+        return view('collections.index', compact('members', 'payType'));
     }
 
-public function show($memberId)
+public function show($memberId, Request $request)
 {
+    $payType = $request->session()->get('pay_type');
+
+    if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
+        $payType = null;
+    }
+
     $member = \App\Models\Member::with('collections')->findOrFail($memberId);
     $collection = $member->collections()->first(); 
     $payments = collect();
@@ -46,7 +65,14 @@ public function show($memberId)
         $allPayments = collect();
     }
 
-    return view('collections.show', compact('member', 'collection', 'allPayments'));
+    $members = Member::query()
+        ->when($payType, function ($query, $payType) {
+            return $query->where('pay_type', $payType);
+        })
+        ->orderBy('name')
+        ->get();
+
+    return view('collections.show', compact('member', 'collection', 'allPayments', 'members', 'payType'));
 }
 
 public function paymentSms($memberId)

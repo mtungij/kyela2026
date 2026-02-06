@@ -37,6 +37,28 @@
                 placeholder="email@example.com"
             />
 
+            <div>
+                <label for="pay_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Aina Ya Mchango
+                </label>
+                <select
+                    id="pay_type"
+                    name="pay_type"
+                    required
+                    class="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900
+                           focus:border-cyan-500 focus:ring-cyan-500
+                           dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                >
+                    <option value="">-- Chagua Aina Ya Mchango --</option>
+                    <option value="mchango_mdogo" {{ old('pay_type') == 'mchango_mdogo' ? 'selected' : '' }}>
+                        Mchango Mdogo (5000)
+                    </option>
+                    <option value="mchango_mkubwa" {{ old('pay_type') == 'mchango_mkubwa' ? 'selected' : '' }}>
+                        Mchango Mkubwa (10000)
+                    </option>
+                </select>
+            </div>
+
             <!-- Password -->
             <div class="relative">
                 <flux:input

@@ -27,6 +27,9 @@
                 <div class="p-4 flex flex-row items-center justify-between w-full">
                     <h1 class="text-lg font-semibold tracking-widest uppercase rounded-lg focus:outline-none focus:shadow-outline">
                         Ripoti Ya Faini - Ambao Waliooza
+                        @if(!empty($payTypeLabel) && $payTypeLabel !== 'Wote')
+                            <span class="text-sm font-medium normal-case">({{ $payTypeLabel }})</span>
+                        @endif
                     </h1>
                 </div>
             </div>
@@ -36,6 +39,9 @@
     <!-- Filter Form -->
     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6">
         <form method="GET" action="{{ route('penalties.report') }}" class="space-y-4">
+            @if(!empty($payType))
+                <input type="hidden" name="pay_type" value="{{ $payType }}">
+            @endif
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- From Date -->
                 <div>
@@ -74,7 +80,7 @@
                         Chafya
                     </button>
                     <a 
-                        href="{{ route('penalties.download-pdf', ['from_date' => $fromDate, 'to_date' => $toDate]) }}"
+                        href="{{ route('penalties.download-pdf', ['from_date' => $fromDate, 'to_date' => $toDate, 'pay_type' => $payType]) }}"
                         class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

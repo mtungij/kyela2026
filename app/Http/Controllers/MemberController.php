@@ -18,7 +18,11 @@ class MemberController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
-        $payType = $request->get('pay_type');
+        $payType = $request->get('pay_type', $request->route('pay_type'));
+
+        if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
+            $payType = null;
+        }
         
         $members = Member::query()
             ->with('collections')

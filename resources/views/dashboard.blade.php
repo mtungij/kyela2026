@@ -1,8 +1,17 @@
 <x-layouts.app :title="__('Dashboard')">
+    @php
+        $membersRoute = $payType === 'mchango_mdogo'
+            ? route('members.index.mdogo')
+            : ($payType === 'mchango_mkubwa'
+                ? route('members.index.mkubwa')
+                : route('members.index'));
+        $paymentsReportRoute = $payType ? route('payments.report', ['pay_type' => $payType]) : route('payments.report');
+        $unpaidReportRoute = $payType ? route('unpaid.report', ['pay_type' => $payType]) : route('unpaid.report');
+    @endphp
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
            <div class="max-w-sm">
-    <a href="{{ route('members.index') }}" class="block hover:scale-105 transition-transform duration-200">
+    <a href="{{ $membersRoute }}" class="block hover:scale-105 transition-transform duration-200">
         <div class="flex items-center justify-between p-6 rounded-2xl shadow
                     bg-white dark:bg-gray-900
                     border border-gray-200 dark:border-gray-700
@@ -89,7 +98,7 @@
 </div>
 
           <div class="max-w-sm">
-    <a href="{{ route('payments.report') }}" class="block hover:scale-105 transition-transform duration-200">
+    <a href="{{ $paymentsReportRoute }}" class="block hover:scale-105 transition-transform duration-200">
         <div class="p-6 rounded-2xl shadow-lg
                 bg-gradient-to-r from-emerald-100 to-teal-100
                 dark:from-emerald-900 dark:to-teal-900
@@ -123,7 +132,7 @@
 </div>
 
 <div class="max-w-sm">
-    <a href="{{ route('payments.report') }}" class="block hover:scale-105 transition-transform duration-200">
+    <a href="{{ $paymentsReportRoute }}" class="block hover:scale-105 transition-transform duration-200">
         <div class="flex items-center justify-between p-6 rounded-2xl shadow
                     bg-white dark:bg-gray-900
                     border border-gray-200 dark:border-gray-700
@@ -156,7 +165,7 @@
 
 
 <div class="max-w-sm">
-    <a href="{{ route('payments.report') }}" class="block hover:scale-105 transition-transform duration-200">
+    <a href="{{ $paymentsReportRoute }}" class="block hover:scale-105 transition-transform duration-200">
         <div class="flex items-center justify-between p-6 rounded-2xl shadow
                     bg-white dark:bg-gray-900
                     border border-gray-200 dark:border-gray-700
@@ -188,7 +197,7 @@
 
 
 <div class="max-w-sm">
-    <a href="{{ route('unpaid.report') }}" class="block hover:scale-105 transition-transform duration-200">
+    <a href="{{ $unpaidReportRoute }}" class="block hover:scale-105 transition-transform duration-200">
         <div class="flex items-center justify-between p-6 rounded-2xl shadow
                     bg-white dark:bg-gray-900
                     border border-gray-200 dark:border-gray-700

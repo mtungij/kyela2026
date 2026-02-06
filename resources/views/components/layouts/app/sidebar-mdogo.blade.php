@@ -47,22 +47,6 @@
 
 
     
-    @php
-        $payType = session('pay_type');
-        $membersRoute = $payType === 'mchango_mdogo'
-            ? route('members.index.mdogo')
-            : ($payType === 'mchango_mkubwa'
-                ? route('members.index.mkubwa')
-                : route('members.index'));
-        $membersCount = $payType
-            ? App\Models\Member::where('pay_type', $payType)->count()
-            : App\Models\Member::count();
-        $membersHeading = $payType === 'mchango_mdogo'
-            ? 'Members - Mdogo'
-            : ($payType === 'mchango_mkubwa' ? 'Members - Mkubwa' : 'Members');
-        $reportParams = $payType ? ['pay_type' => $payType] : [];
-    @endphp
-
     <flux:sidebar sticky collapsible="mobile" class=" bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-700">
         <flux:sidebar.header>
             <flux:sidebar.brand
@@ -78,8 +62,8 @@
         <flux:sidebar.nav>
             <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" current>Home</flux:sidebar.item>
                 <flux:sidebar.group   expandable
-               :expanded="false" heading="{{ $membersHeading }}"  class="grid">
-                <flux:sidebar.item  badge="{{ $membersCount }}" href="{{ $membersRoute }}" >Sajili Member</flux:sidebar.item>
+               :expanded="false" heading="Members - Mdogo"  class="grid">
+                <flux:sidebar.item  badge="{{ App\Models\Member::where('pay_type', 'mchango_mdogo')->count() }}" href="{{ route('members.index.mdogo') }}" >Mchango Mdogo</flux:sidebar.item>
                 {{-- <flux:sidebar.item href="#" badge="12">Member Wote</flux:sidebar.item> --}}
         
             </flux:sidebar.group>
@@ -91,23 +75,15 @@
     :expanded="false" heading="Reports" icon="chart-bar" class="grid">
                 <flux:sidebar.item href="{{ route('daily.report') }}">Funga Hesabu</flux:sidebar.item>
    
-                @if($payType)
-                <flux:sidebar.item href="{{ route('unpaid.report', $reportParams) }}">Ambao Hawajalipa</flux:sidebar.item>
-                @else
                 <flux:sidebar.item href="{{ route('unpaid.report') }}">Ambao Hawajalipa (Wote)</flux:sidebar.item>
                 <flux:sidebar.item href="{{ route('unpaid.report', ['pay_type' => 'mchango_mdogo']) }}">Hawajalipa - Mdogo</flux:sidebar.item>
                 <flux:sidebar.item href="{{ route('unpaid.report', ['pay_type' => 'mchango_mkubwa']) }}">Hawajalipa - Mkubwa</flux:sidebar.item>
-                @endif
                 
-                @if($payType)
-                <flux:sidebar.item href="{{ route('payments.report', $reportParams) }}">Ambao Wamelipa</flux:sidebar.item>
-                @else
                 <flux:sidebar.item href="{{ route('payments.report') }}">Ambao Wamelipa (Wote)</flux:sidebar.item>
                 <flux:sidebar.item href="{{ route('payments.report', ['pay_type' => 'mchango_mdogo']) }}">Wamelipa - Mdogo</flux:sidebar.item>
                 <flux:sidebar.item href="{{ route('payments.report', ['pay_type' => 'mchango_mkubwa']) }}">Wamelipa - Mkubwa</flux:sidebar.item>
-                @endif
                 
-                <flux:sidebar.item href="{{ $payType ? route('penalties.report', $reportParams) : route('penalties.report') }}">Ambao Waliolipa Faini</flux:sidebar.item>
+                <flux:sidebar.item href="{{ route('penalties.report') }}">Ambao Waliolipa Faini</flux:sidebar.item>
              
             </flux:sidebar.group>
 

@@ -6,6 +6,15 @@
             <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">
                 Search Customer
             </h3>
+
+            @if(!empty($payType))
+                <p class="mb-4 text-sm text-gray-600 dark:text-gray-300">
+                    Aina ya Mchango:
+                    <span class="font-semibold">
+                        {{ $payType === 'mchango_mdogo' ? 'Mchango Mdogo (5000)' : 'Mchango Mkubwa (10000)' }}
+                    </span>
+                </p>
+            @endif
             
             <!-- Customer Select2 Dropdown -->
             <div class="mb-4">
@@ -13,7 +22,7 @@
                 <select id="member-search" name="member_id"
                     class="py-3 px-4 pe-9 block w-full bg-cyan-600 border-gray-200 rounded-lg text-sm focus:border-cyan-500 focus:ring-cyan-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 dark:placeholder-gray-500 dark:focus:ring-gray-600 select2">
                     <option value="">Select customer</option>
-                    @foreach(\App\Models\Member::orderBy('name')->get() as $m)
+                    @foreach($members as $m)
                         <option value="{{ $m->id }}">
                             {{ $m->name }} - {{ $m->phone }}
                         </option>

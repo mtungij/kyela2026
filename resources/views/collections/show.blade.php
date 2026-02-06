@@ -188,7 +188,7 @@
                         <select id="member-search" name="member_id"
                             class="py-3 px-4 pe-9 block w-full bg-cyan-600 border-gray-200 rounded-lg text-sm focus:border-cyan-500 focus:ring-cyan-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 dark:placeholder-gray-500 dark:focus:ring-gray-600 select2">
                             <option value="">Chagua Member</option>
-                            @foreach(\App\Models\Member::orderBy('name')->get() as $m)
+                            @foreach($members as $m)
                                 <option  value="{{ $m->id }}" {{ $m->id == $member->id ? 'selected' : '' }}>
                                     {{ mb_strtoupper($m->name , 'UTF-8') }} - {{ $m->phone }}
                                 </option>

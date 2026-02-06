@@ -11,10 +11,20 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $payType = $request->session()->get('pay_type');
+
+        if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
+            $payType = null;
+        }
+
+        $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
+
         // Total Members
-        $totalMembers = Member::count();
+        $totalMembers = Member::when($payType, function ($query, $payType) {
+            return $query->where('pay_type', $payType);
+        })->count();
 
         // Expected Collection Today (sum of amounts for members who should pay today AND haven't paid yet)
         $today = Carbon::today();
@@ -22,6 +32,11 @@ class DashboardController extends Controller
         // Get member IDs who have already paid today
         $paidMemberIdsToday = Payment::whereDate('payment_date', $today)
             ->where('payment_type', 'collection')
+            ->when($payType, function ($query, $payType) {
+                return $query->whereHas('member', function ($q) use ($payType) {
+                    $q->where('pay_type', $payType);
+                });
+            })
             ->pluck('member_id')
             ->unique()
             ->toArray();
@@ -29,6 +44,9 @@ class DashboardController extends Controller
         $members = Member::where('type', 'daily')
             ->whereNotNull('start_date')
             ->whereNotNull('end_date')
+            ->when($payType, function ($query, $payType) {
+                return $query->where('pay_type', $payType);
+            })
             ->whereNotIn('id', $paidMemberIdsToday)
             ->get();
         
@@ -39,18 +57,35 @@ class DashboardController extends Controller
         // dd($expectedCollectionToday);
 
         // Collection collected Today
-        $collectionCollectedToday = Payment::whereDate('payment_date', Carbon::today())->sum('amount');
+        $collectionCollectedToday = Payment::whereDate('payment_date', Carbon::today())
+            ->when($payType, function ($query, $payType) {
+                return $query->whereHas('member', function ($q) use ($payType) {
+                    $q->where('pay_type', $payType);
+                });
+            })
+            ->sum('amount');
 
         // Penalties Paid Today
         $penaltiesPaidToday = Payment::whereDate('payment_date', Carbon::today())
             ->where('payment_type', 'penalty')
+            ->when($payType, function ($query, $payType) {
+                return $query->whereHas('member', function ($q) use ($payType) {
+                    $q->where('pay_type', $payType);
+                });
+            })
             ->sum('amount');
 
         // Collections collected this week
         $collectionsThisWeek = Payment::whereBetween('payment_date', [
             Carbon::now()->startOfWeek(),
             Carbon::now()->endOfWeek()
-        ])->sum('amount');
+        ])
+            ->when($payType, function ($query, $payType) {
+                return $query->whereHas('member', function ($q) use ($payType) {
+                    $q->where('pay_type', $payType);
+                });
+            })
+            ->sum('amount');
 
         // Payments Collected This Month
    $now = Carbon::now();
@@ -58,7 +93,13 @@ class DashboardController extends Controller
 $paymentsCollectedThisMonth = Payment::whereBetween('payment_date', [
     $now->copy()->startOfMonth(),
     $now->copy()->endOfMonth(),
-])->sum('amount');
+])
+    ->when($payType, function ($query, $payType) {
+        return $query->whereHas('member', function ($q) use ($payType) {
+            $q->where('pay_type', $payType);
+        });
+    })
+    ->sum('amount');
 
 
         // Penalty Fees Collected This Month
@@ -66,11 +107,24 @@ $paymentsCollectedThisMonth = Payment::whereBetween('payment_date', [
             ->whereBetween('payment_date', [
                 $now->copy()->startOfMonth(),
                 $now->copy()->endOfMonth(),
-            ])->sum('amount');
+            ])
+            ->when($payType, function ($query, $payType) {
+                return $query->whereHas('member', function ($q) use ($payType) {
+                    $q->where('pay_type', $payType);
+                });
+            })
+            ->sum('amount');
 
         // Payments Needed to collected this Month (unpaid collections)
-        $paymentsNeededThisMonth = Collection::where('status', 'pending')
-            ->orWhere('balance', '>', 0)
+        $paymentsNeededThisMonth = Collection::where(function ($query) {
+            $query->where('status', 'pending')
+                ->orWhere('balance', '>', 0);
+        })
+            ->when($payType, function ($query, $payType) {
+                return $query->whereHas('member', function ($q) use ($payType) {
+                    $q->where('pay_type', $payType);
+                });
+            })
             ->count();
 
         // Payments Needed to collected this Week (expected amount - paid amount)
@@ -81,11 +135,17 @@ $paymentsCollectedThisMonth = Payment::whereBetween('payment_date', [
         $dailyMembers = Member::where('type', 'daily')
             ->whereNotNull('start_date')
             ->whereNotNull('end_date')
+            ->when($payType, function ($query, $payType) {
+                return $query->where('pay_type', $payType);
+            })
             ->get();
             
         $weeklyMembers = Member::where('type', 'weekly')
             ->whereNotNull('start_date')
             ->whereNotNull('end_date')
+            ->when($payType, function ($query, $payType) {
+                return $query->where('pay_type', $payType);
+            })
             ->get();
         
         // Calculate days in the week that members should pay
@@ -114,7 +174,13 @@ $paymentsCollectedThisMonth = Payment::whereBetween('payment_date', [
         $paidThisWeek = Payment::whereBetween('payment_date', [
             $startOfWeek,
             $endOfWeek
-        ])->sum('amount');
+        ])
+            ->when($payType, function ($query, $payType) {
+                return $query->whereHas('member', function ($q) use ($payType) {
+                    $q->where('pay_type', $payType);
+                });
+            })
+            ->sum('amount');
         $paymentsNeededThisWeek = max(0, $expectedThisWeek - $paidThisWeek);
 
         // Expenses
@@ -134,6 +200,8 @@ $paymentsCollectedThisMonth = Payment::whereBetween('payment_date', [
             'paymentsNeededThisWeek' => $paymentsNeededThisWeek,
             'expensesToday' => $expensesToday,
             'expensesThisMonth' => $expensesThisMonth,
+            'payType' => $payType,
+            'payTypeLabel' => $payTypeLabel,
         ]);
     }
 

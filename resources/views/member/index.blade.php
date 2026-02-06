@@ -13,7 +13,7 @@
                 <!-- Search & Filters -->
                 <form
                     method="GET"
-                    action="{{ route('members.index') }}"
+                    action="{{ url()->current() }}"
                     id="searchForm"
                     class="flex flex-col w-full gap-4 sm:flex-row sm:flex-wrap md:w-2/3"
                 >
@@ -40,10 +40,10 @@
                                    dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         >
                             <option value="">-- Aina Ya Mchango --</option>
-                            <option value="mchango_mdogo" {{ request('pay_type') == 'mchango_mdogo' ? 'selected' : '' }}>
+                            <option value="mchango_mdogo" {{ ($payType ?? request('pay_type')) == 'mchango_mdogo' ? 'selected' : '' }}>
                                 Mchango Mdogo (5000)
                             </option>
-                            <option value="mchango_mkubwa" {{ request('pay_type') == 'mchango_mkubwa' ? 'selected' : '' }}>
+                            <option value="mchango_mkubwa" {{ ($payType ?? request('pay_type')) == 'mchango_mkubwa' ? 'selected' : '' }}>
                                 Mchango Mkubwa (10000)
                             </option>
                         </select>
@@ -462,7 +462,7 @@
                 </span>
                 
                 <div class="inline-flex items-stretch -space-x-px">
-                    {{ $members->appends(['search' => request('search')])->links() }}
+                    {{ $members->appends(['search' => request('search'), 'pay_type' => $payType ?? request('pay_type')])->links() }}
                 </div>
             </nav>
         </div>
