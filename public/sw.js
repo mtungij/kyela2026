@@ -5,7 +5,9 @@ const APP_SHELL = [
   "/favicon.ico",
   "/favicon.svg",
   "/apple-touch-icon.png",
-  "/images/logo.jpeg"
+  "/images/logo-180.png",
+  "/images/logo-192.png",
+  "/images/logo-512.png"
 ];
 
 self.addEventListener("install", (event) => {
