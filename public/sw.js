@@ -1,4 +1,4 @@
-const CACHE_NAME = "kyela-pwa-v1";
+const CACHE_NAME = "kyela-pwa-v2";
 const APP_SHELL = [
   "/",
   "/manifest.json",
