@@ -27,10 +27,12 @@ class MemberController extends Controller
         $members = Member::query()
             ->with('collections')
             ->when($search, function($query, $search) {
-                return $query->where('name', 'like', "%{$search}%")
-                            ->orWhere('phone', 'like', "%{$search}%")
-                            ->orWhere('address', 'like', "%{$search}%")
-                            ->orWhere('business_address', 'like', "%{$search}%");
+                return $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhere('address', 'like', "%{$search}%")
+                      ->orWhere('business_address', 'like', "%{$search}%");
+                });
             })
 
              ->when($payType, function($query, $payType) {

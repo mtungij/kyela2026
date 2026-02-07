@@ -30,36 +30,13 @@
                         />
                     </div>
 
-                    <!-- Pay Type -->
-                    <div class="w-full sm:w-56">
-                        <select
-                            name="pay_type"
-                            id="pay_type_filter"
-                            class="w-full p-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg
-                                   focus:ring-cyan-500 focus:border-cyan-500
-                                   dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        >
-                            <option value="">-- Aina Ya Mchango --</option>
-                            <option value="mchango_mdogo" {{ ($payType ?? request('pay_type')) == 'mchango_mdogo' ? 'selected' : '' }}>
-                                Mchango Mdogo (5000)
-                            </option>
-                            <option value="mchango_mkubwa" {{ ($payType ?? request('pay_type')) == 'mchango_mkubwa' ? 'selected' : '' }}>
-                                Mchango Mkubwa (10000)
-                            </option>
-                        </select>
-                    </div>
-
                     <!-- Buttons -->
                     <div class="flex flex-col gap-2 sm:flex-row sm:space-x-2">
-                        <button
-                            type="submit"
-                            class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-cyan-700 hover:bg-cyan-800
-                                   focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800"
-                        >
-                            Filter
-                        </button>
-
+                        @if(session('pay_type'))
+                            <input type="hidden" name="pay_type" value="{{ session('pay_type') }}">
+                        @endif
         <button
+    id="download-pdf-btn"
     type="submit"
     formaction="{{ route('members.download-pdf') }}"
     formtarget="_blank"
@@ -334,6 +311,10 @@
                     </div>
 
                     <div>
+    @php
+        $editPayTypeLocked = !empty(session('pay_type'));
+        $editPayTypeValue = session('pay_type') ?? $member->pay_type;
+    @endphp
     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
         Aina Ya Mchango
     </label>
@@ -342,14 +323,18 @@
         class="pay-type-select bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
                block w-full p-2.5"
         required
+        @if($editPayTypeLocked) disabled @endif
     >
-        <option value="mchango_mdogo" {{ $member->pay_type == 'mchango_mdogo' ? 'selected' : '' }}>
+        <option value="mchango_mdogo" {{ $editPayTypeValue == 'mchango_mdogo' ? 'selected' : '' }}>
             Mchango Mdogo (5000)
         </option>
-        <option value="mchango_mkubwa" {{ $member->pay_type == 'mchango_mkubwa' ? 'selected' : '' }}>
+        <option value="mchango_mkubwa" {{ $editPayTypeValue == 'mchango_mkubwa' ? 'selected' : '' }}>
             Mchango Mkubwa (10000)
         </option>
     </select>
+    @if($editPayTypeLocked)
+        <input type="hidden" name="pay_type" value="{{ $editPayTypeValue }}">
+    @endif
 </div>
 
                    <input type="hidden" name="type" value="daily">
@@ -364,7 +349,7 @@
         class="amount-input bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
                focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5"
         readonly
-        value="{{ old('amount') }}"
+        value="{{ old('amount') ?? ($editPayTypeValue === 'mchango_mdogo' ? 5000 : ($editPayTypeValue === 'mchango_mkubwa' ? 10000 : '')) }}"
     >
 </div>
 
@@ -528,20 +513,27 @@
                         @enderror
                     </div>
 
-                                        <div>
-    <label for="pay_type"  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Pay Type</label>
-    <select name="pay_type" id="pay_type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"  required>
-        <option value="">-- Chagua Aina Ya Mchango --</option>
-        <option value="mchango_mdogo"
-            {{ old('pay_type') == 'mchango_mdogo' ? 'selected' : '' }}>
-            Mchango Mdogo (5000 TSh)
-        </option>
-        <option value="mchango_mkubwa"
-            {{ old('pay_type') == 'mchango_mkubwa' ? 'selected' : '' }}>
-            Mchango Mkubwa (10,000 TSh)
-        </option>
-    </select>
-</div>
+                    <div>
+                        @php
+                            $selectedPayType = old('pay_type', $payType ?? session('pay_type'));
+                            $payTypeLocked = !empty($selectedPayType);
+                        @endphp
+                        <label for="pay_type"  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Pay Type</label>
+                        <select name="pay_type" id="pay_type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500"  required @if($payTypeLocked) disabled @endif>
+                            <option value="">-- Chagua Aina Ya Mchango --</option>
+                            <option value="mchango_mdogo"
+                                {{ $selectedPayType == 'mchango_mdogo' ? 'selected' : '' }}>
+                                Mchango Mdogo (5000 TSh)
+                            </option>
+                            <option value="mchango_mkubwa"
+                                {{ $selectedPayType == 'mchango_mkubwa' ? 'selected' : '' }}>
+                                Mchango Mkubwa (10,000 TSh)
+                            </option>
+                        </select>
+                        @if($payTypeLocked)
+                            <input type="hidden" name="pay_type" value="{{ $selectedPayType }}">
+                        @endif
+                    </div>
                   <input type="hidden" name="type" value="daily">
 
 
@@ -559,7 +551,7 @@
            dark:bg-gray-700 dark:border-gray-600 dark:text-white
            @error('amount') border-red-500 @enderror"
     placeholder="Kiasi Cha Kuchangia"
-    value="{{ old('amount') }}"
+    value="{{ old('amount') ?? ($selectedPayType === 'mchango_mdogo' ? 5000 : ($selectedPayType === 'mchango_mkubwa' ? 10000 : '')) }}"
     readonly
 >
    
@@ -609,22 +601,43 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const searchForm = document.getElementById('searchForm');
         const searchInput = document.getElementById('simple-search');
         let searchTimeout;
 
+        if (searchForm) {
+            searchForm.addEventListener('submit', function (event) {
+                const submitter = event.submitter;
+                if (!submitter || submitter.id !== 'download-pdf-btn') {
+                    event.preventDefault();
+                }
+            });
+        }
+
+        if (!searchInput) {
+            return;
+        }
+
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
-            
+
             searchTimeout = setTimeout(function() {
                 const searchValue = searchInput.value;
                 const url = new URL(window.location.href);
-                
+                const sessionPayType = @json(session('pay_type'));
+
                 if (searchValue) {
                     url.searchParams.set('search', searchValue);
                 } else {
                     url.searchParams.delete('search');
                 }
-                
+
+                if (sessionPayType) {
+                    url.searchParams.set('pay_type', sessionPayType);
+                } else {
+                    url.searchParams.delete('pay_type');
+                }
+
                 // Reload page with new search parameter
                 window.location.href = url.toString();
             }, 500); // Wait 500ms after user stops typing
@@ -648,7 +661,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // On change
-    payTypeSelect.addEventListener('change', updateAmount);
+    if (payTypeSelect) {
+        payTypeSelect.addEventListener('change', updateAmount);
+    }
 
     // On page load (for old values / validation errors)
     updateAmount();
