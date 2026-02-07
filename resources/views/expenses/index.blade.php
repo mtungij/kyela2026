@@ -56,6 +56,27 @@
         </div>
     </div>
 
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-l-4 border-emerald-500">
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Salio Leo (Malipo - Matumizi)</h3>
+            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
+                TZS {{ number_format($netToday, 2) }}
+            </p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-l-4 border-emerald-500">
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Salio la Mwezi (Malipo - Matumizi)</h3>
+            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
+                TZS {{ number_format($netMonthly, 2) }}
+            </p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-l-4 border-emerald-500">
+            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Salio Jumla (Malipo - Matumizi)</h3>
+            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
+                TZS {{ number_format($netTotal, 2) }}
+            </p>
+        </div>
+    </div>
+
     <!-- Add Expense Button -->
     <div class="mb-4">
         <button type="button" onclick="openExpenseModal()" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
