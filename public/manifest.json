@@ -1,0 +1,18 @@
+{
+  "name": "Kyela 2026",
+  "short_name": "Kyela",
+  "description": "Kyela 2026 management system",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0e7490",
+  "icons": [
+    {
+      "src": "/images/logo.jpeg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
