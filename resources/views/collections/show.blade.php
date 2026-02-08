@@ -85,17 +85,13 @@
                                 {{ $collection->status === 'completed' ? 'Kamaliza' : ($collection->status === 'partial' ? 'Inaendelea' : 'Hajaanza') }}
                             </span>
                         </li>
-                        <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-                            <span>Aina</span>
-                            <span {{ $member->type === 'daily' ? 'kila siku' : ($member->type === 'weekly' ? 'kila wiki' : 'kila mwezi') }}></span>
-                            <span class="capitalize">{{ $member->type === 'daily' ? 'kila siku' : ($member->type === 'weekly' ? 'kila wiki' : 'kila mwezi') }}</span>
-                        </li>
+                      
                          <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-                            <span>Muda Gani</span>
+                            <span>Idadi Ya Siku</span>
                             <span>{{ $member->number_type}}</span>
                         </li>
                         <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
-                            <span>Kiasi cha kuchangia</span>
+                            <span>Kiasi kwa siku</span>
                             <span>{{ number_format($member->amount, 0) }}</span>
                         </li>
                        
@@ -402,6 +398,54 @@ $(document).ready(function () {
 });
 
 
+</script>
+
+<script>
+function openPaymentModal(type) {
+    const modal = document.getElementById('payment-modal');
+    const paymentType = document.getElementById('payment_type');
+    const penaltyInfo = document.getElementById('penalty-info');
+    const modalTitle = document.getElementById('modal-title');
+
+    if (!modal || !paymentType || !penaltyInfo || !modalTitle) {
+        return;
+    }
+
+    paymentType.value = type === 'penalty' ? 'penalty' : 'regular';
+
+    if (type === 'penalty') {
+        penaltyInfo.classList.remove('hidden');
+        modalTitle.textContent = 'Lipa Faini';
+    } else {
+        penaltyInfo.classList.add('hidden');
+        modalTitle.textContent = 'Fanya Malipo';
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closePaymentModal() {
+    const modal = document.getElementById('payment-modal');
+    if (!modal) {
+        return;
+    }
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('payment-modal');
+    if (!modal) {
+        return;
+    }
+
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+            closePaymentModal();
+        }
+    });
+});
 </script>
 
 

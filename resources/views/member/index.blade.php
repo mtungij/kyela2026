@@ -79,202 +79,182 @@
     </div>
 </section>
 
-  
 
 
-           <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
 
-             
-                        @if($members->isEmpty())
-                            <div class="col-span-full">
-                                <p class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Hamna member Kwa sasa.</p>
-                            </div>
-                        @endif
-
-                        @foreach($members as $member)
-
-<div
-    class="relative flex flex-col gap-4 p-5 mt-3 max-w-sm w-full
-           bg-white dark:bg-gray-900
-           border border-gray-200 dark:border-gray-700
-           rounded-2xl shadow-md hover:shadow-xl
-           transition-shadow duration-300">
-
-    <!-- Avatar -->
-   <div class="flex justify-center -mt-12">
-    @if($member->pay_type == 'mchango_mdogo')
-        <img
-            class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
-                   ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
-            src="{{ asset('images/member.png') }}"
-            alt="Member - Mchango Mdogo">
-    @elseif($member->pay_type == 'mchango_mkubwa')
-        <img
-            class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
-                   ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
-            src="{{ asset('images/vip.png') }}"
-            alt="Member">
-    @else
-        <img
-            class="w-24 h-24 rounded-full bg-white dark:bg-gray-800
-                   ring-2 ring-blue-400 ring-offset-4 ring-offset-white dark:ring-offset-gray-900"
-            src="{{ asset('images/member.png') }}"
-            alt="Member">
-    @endif
-</div>
-
-
-    <!-- Member Details -->
-    <ul
-        class="mt-4 text-sm rounded-xl overflow-hidden
-               bg-gray-100 dark:bg-gray-800
-               text-gray-800 dark:text-gray-200
-               divide-y divide-gray-300 dark:divide-gray-700">
-
-        <li class="flex justify-center px-4 py-2 font-semibold">
-            <span class="uppercase">{{ $member->name }}</span>
-        </li>
-
-        <li class="flex justify-center px-4 py-2">
-            <span>{{ $member->phone }}</span>
-        </li>
-
-        <li class="flex justify-between px-4 py-2">
-            <span>Makazi</span>
-            <span>{{ $member->address }}</span>
-        </li>
-
-       <li class="flex justify-between px-4 py-2">
-    <span>Alianza Lini</span>
-    <span>{{ \Carbon\Carbon::parse($member->start_date)->format('d-m-Y') }}</span>
-</li>
-
-
-        <li class="flex justify-between px-4 py-2">
-            <span>Mwisho</span>
-            <span>{{ \Carbon\Carbon::parse($member->end_date)->format('d-m-Y') }}</span>
-        </li>
-
-        <li class="flex justify-between px-4 py-2">
-            <span>Biashara</span>
-            <span>{{ $member->business_address }}</span>
-        </li>
-
-        <li class="flex justify-between px-4 py-2 font-semibold">
-            <span>Kiasi cha Kuchangia</span>
-            <span>{{ number_format($member->amount, 0) }}</span>
-        </li>
-
-        {{-- <li class="flex justify-between px-4 py-2">
-            <span>Muda</span>
-            <span>
-                @if($member->type === 'daily')
-                    Kila Siku ({{ $member->number_type }})
-                @elseif($member->type === 'weekly')
-                    Kila Wiki ({{ $member->number_type }})
-                @elseif($member->type === 'monthly')
-                    Kila Mwezi ({{ $member->number_type }})
-                @endif
-            </span>
-        </li> --}}
-
-        <li class="flex justify-between px-4 py-2 font-semibold">
-            <span>Faini</span>
-            @php
-                $collection = $member->collections->first();
-                $penaltyBalance = 0;
-                $totalPenalty = 0;
-                $penaltyPaid = 0;
-                
-                if ($collection) {
-                    // Get current penalty balance (this will recalculate and save)
-                    $penaltyBalance = $collection->getCurrentPenaltyBalance();
-                    // Refresh to get updated values
-                    $collection->refresh();
-                    $totalPenalty = $collection->total_penalty;
-                    $penaltyPaid = $collection->penalty_paid;
-                }
-            @endphp
-
-            <div class="text-right">
-                @if($penaltyBalance > 0)
-                    <div class="text-orange-600 dark:text-orange-400 font-bold">
-                        {{ number_format($penaltyBalance, 0) }} TSh
+            <div class="w-full p-4">
+                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+                 
+                    <div class="w-full md:w-1/3">
+                        <input
+                            id="member-table-search"
+                            type="text"
+                            placeholder="Andika jina, simu, makazi..."
+                            class="w-full p-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg
+                                   focus:ring-cyan-500 focus:border-cyan-500
+                                   dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                        />
                     </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                        Jumla: {{ number_format($totalPenalty, 0) }} | 
-                        Imelipwa: {{ number_format($penaltyPaid, 0) }}
-                    </div>
-                @else
-                    <span class="text-gray-500 dark:text-gray-400">0</span>
-                @endif
-            </div>
-        </li>
-    </ul>
-   @if(auth()->user()->isAdmin())
-    <!-- Action Button -->
-    <button
-        id="dropdown-{{ $member->id }}-button"
-        data-dropdown-toggle="dropdown-{{ $member->id }}"
-        class="mt-3 inline-flex items-center justify-center gap-2
-               w-full px-4 py-2.5 text-sm font-medium
-               rounded-xl text-white
-               bg-cyan-700 hover:bg-cyan-800
-               focus:ring-4 focus:ring-cyan-500 focus:outline-none">
-        Action
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="m19 9-7 7-7-7"/>
-        </svg>
-    </button>
+                </div>
+                <div class="relative overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                    <table id="members-table" class="w-full text-sm text-left text-gray-700 dark:text-gray-300">
+                        <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-800 dark:text-gray-200">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">Picha</th>
+                                <th scope="col" class="px-4 py-3">Jina</th>
+                                <th scope="col" class="px-4 py-3">Simu</th>
+                              
+                                <th scope="col" class="px-4 py-3">Alianza</th>
+                                <th scope="col" class="px-4 py-3">Mwisho</th>
+                                <th scope="col" class="px-4 py-3">Kiasi</th>
+                                <th scope="col" class="px-4 py-3">Idadi</th>
+                                <th scope="col" class="px-4 py-3">Faini</th>
+                                <th scope="col" class="px-4 py-3">Malipo</th>
+                                @if(auth()->user()->isAdmin())
+                                    <th scope="col" class="px-4 py-3">Hatua</th>
+                                @endif
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php
+                                $colspan = auth()->user()->isAdmin() ? 12 : 11;
+                            @endphp
+                            @if($members->isEmpty())
+                                <tr class="table-empty-row">
+                                    <td colspan="{{ $colspan }}" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                        Hamna member Kwa sasa.
+                                    </td>
+                                </tr>
+                            @endif
 
-    <!-- Dropdown -->
-    <div
-        id="dropdown-{{ $member->id }}"
-        class="hidden absolute right-5 bottom-16 z-20 w-44
-               bg-white dark:bg-gray-800
-               border border-gray-200 dark:border-gray-700
-               rounded-xl shadow-lg">
+                            @foreach($members as $member)
+                                @php
+                                    $collection = $member->collections->first();
+                                    $penaltyBalance = 0;
+                                    $totalPenalty = 0;
+                                    $penaltyPaid = 0;
 
-        <ul class="p-2 text-sm">
-            <li>
-                <a href="#"
-                   data-modal-target="editModal-{{ $member->id }}"
-                   data-modal-toggle="editModal-{{ $member->id }}"
-                   class="block px-3 py-2 rounded-lg
-                          hover:bg-gray-100 dark:hover:bg-gray-700">
-                    Edit Member
-                </a>
-            </li>
+                                    if ($collection) {
+                                        $penaltyBalance = $collection->getCurrentPenaltyBalance();
+                                        $collection->refresh();
+                                        $totalPenalty = $collection->total_penalty;
+                                        $penaltyPaid = $collection->penalty_paid;
+                                    }
+                                @endphp
+                                <tr class="bg-white border-t dark:bg-gray-900 dark:border-gray-700">
+                                    <td class="px-4 py-3">
+                                        @if($member->pay_type == 'mchango_mdogo')
+                                            <img class="w-10 h-10 rounded-full" src="{{ asset('images/member.png') }}" alt="Member - Mchango Mdogo">
+                                        @elseif($member->pay_type == 'mchango_mkubwa')
+                                            <img class="w-10 h-10 rounded-full" src="{{ asset('images/vip.png') }}" alt="Member">
+                                        @else
+                                            <img class="w-10 h-10 rounded-full" src="{{ asset('images/member.png') }}" alt="Member">
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3 font-semibold uppercase">{{ $member->name }}</td>
+                                    <td class="px-4 py-3">{{ $member->phone }}</td>
+                                 
+                                    <td class="px-4 py-3">{{ \Carbon\Carbon::parse($member->start_date)->format('d-m-Y') }}</td>
+                                    <td class="px-4 py-3">{{ \Carbon\Carbon::parse($member->end_date)->format('d-m-Y') }}</td>
+                                    <td class="px-4 py-3 font-semibold">{{ number_format($member->amount, 0) }}</td>
+                                    <td class="px-4 py-3">{{ $member->number_type }}</td>
+                                    <td class="px-4 py-3">
+                                        @if($penaltyBalance > 0)
+                                            <div class="text-orange-600 dark:text-orange-400 font-bold">
+                                                {{ number_format($penaltyBalance, 0) }} TSh
+                                            </div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                Jumla: {{ number_format($totalPenalty, 0) }} | Imelipwa: {{ number_format($penaltyPaid, 0) }}
+                                            </div>
+                                        @else
+                                            <span class="text-gray-500 dark:text-gray-400">0</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($collection && $penaltyBalance > 0)
+                                            <a
+                                                href="{{ route('collections.show', $member->id) }}"
+                                                class="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700"
+                                            >
+                                                Lipa Faini
+                                            </a>
+                                        @elseif($collection && $collection->balance > 0)
+                                            <a
+                                                href="{{ route('collections.show', $member->id) }}"
+                                                class="inline-flex items-center px-3 py-2 text-xs font-medium text-white bg-cyan-700 rounded-lg hover:bg-cyan-800"
+                                            >
+                                                Fanya Malipo
+                                            </a>
+                                        @elseif($collection)
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">Hakuna deni</span>
+                                        @else
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">Hakuna mchango</span>
+                                        @endif
+                                    </td>
+                                    @if(auth()->user()->isAdmin())
+                                        <td class="px-4 py-3">
+                                            <div class="relative inline-block text-left">
+                                                <button
+                                                    id="dropdown-{{ $member->id }}-button"
+                                                    data-dropdown-toggle="dropdown-{{ $member->id }}"
+                                                    class="inline-flex items-center justify-center gap-2
+                                                           px-3 py-2 text-xs font-medium
+                                                           rounded-lg text-white
+                                                           bg-cyan-700 hover:bg-cyan-800
+                                                           focus:ring-4 focus:ring-cyan-500 focus:outline-none">
+                                                    Action
+                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                              d="m19 9-7 7-7-7"/>
+                                                    </svg>
+                                                </button>
 
-            @if($penaltyBalance > 0)
-            <li>
-                <a href="#"
-                   data-modal-target="forgivePenaltyModal-{{ $member->id }}"
-                   data-modal-toggle="forgivePenaltyModal-{{ $member->id }}"
-                   class="block px-3 py-2 rounded-lg
-                          hover:bg-gray-100 dark:hover:bg-gray-700">
-                    Samehe Faini
-                </a>
-            </li>
-            @endif
-
-            <li>
-                <a href="#"
-                   data-modal-target="deleteModal-{{ $member->id }}"
-                   data-modal-toggle="deleteModal-{{ $member->id }}"
-                   class="block px-3 py-2 rounded-lg text-red-600
-                          hover:bg-red-50 dark:hover:bg-red-900/20">
-                    Futa Member
-                </a>
-            </li>
-        </ul>
-    </div>
-    @endif
-</div>
-
-                      
-                        @endforeach
+                                                <div
+                                                    id="dropdown-{{ $member->id }}"
+                                                    class="hidden absolute right-0 z-20 mt-2 w-44
+                                                           bg-white dark:bg-gray-800
+                                                           border border-gray-200 dark:border-gray-700
+                                                           rounded-xl shadow-lg">
+                                                    <ul class="p-2 text-sm">
+                                                        <li>
+                                                            <a href="#"
+                                                               data-modal-target="editModal-{{ $member->id }}"
+                                                               data-modal-toggle="editModal-{{ $member->id }}"
+                                                               class="block px-3 py-2 rounded-lg
+                                                                      hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                                Edit Member
+                                                            </a>
+                                                        </li>
+                                                        @if($penaltyBalance > 0)
+                                                            <li>
+                                                                <a href="#"
+                                                                   data-modal-target="forgivePenaltyModal-{{ $member->id }}"
+                                                                   data-modal-toggle="forgivePenaltyModal-{{ $member->id }}"
+                                                                   class="block px-3 py-2 rounded-lg
+                                                                          hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                                    Samehe Faini
+                                                                </a>
+                                                            </li>
+                                                        @endif
+                                                        <li>
+                                                            <a href="#"
+                                                               data-modal-target="deleteModal-{{ $member->id }}"
+                                                               data-modal-toggle="deleteModal-{{ $member->id }}"
+                                                               class="block px-3 py-2 rounded-lg text-red-600
+                                                                      hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                                Futa Member
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
 <!-- Edit Modals for each member -->
@@ -700,6 +680,28 @@ document.addEventListener('DOMContentLoaded', function () {
         setAmount(select);
     });
 
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('member-table-search');
+    const table = document.getElementById('members-table');
+
+    if (!searchInput || !table) {
+        return;
+    }
+
+    const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => !row.classList.contains('table-empty-row'));
+
+    searchInput.addEventListener('input', function () {
+        const query = searchInput.value.toLowerCase().trim();
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
 });
 </script>
 

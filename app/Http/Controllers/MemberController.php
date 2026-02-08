@@ -232,14 +232,25 @@ public function downloadPdf(Request $request)
     }
 
     $member = Member::findOrFail($id);
-    
+
     // Calculate end_date if start_date exists and number_type is provided
     if ($member->start_date && isset($validatedData['number_type'])) {
         $startDate = Carbon::parse($member->start_date);
         $validatedData['end_date'] = $startDate->copy()->addDays((int)$validatedData['number_type'])->format('Y-m-d');
     }
-    
-    $member->update($validatedData);
+
+    DB::transaction(function () use ($member, $validatedData) {
+        $member->update($validatedData);
+        $member->refresh();
+
+        $collection = $member->collections()->first();
+        if ($collection) {
+            $newTotalAmount = $member->amount * $member->number_type;
+            $collection->total_amount = $newTotalAmount;
+            $collection->balance = max($newTotalAmount - $collection->amount_paid, 0);
+            $collection->save();
+        }
+    });
 
     return redirect()->route('members.index')->with('success', 'Member updated successfully.');
 }

@@ -49,6 +49,9 @@ class DashboardController extends Controller
             })
             ->whereNotIn('id', $paidMemberIdsToday)
             ->get();
+
+
+           
         
         $expectedCollectionToday = $members->filter(function($member) use ($today) {
             return $member->start_date <= $today && $member->end_date >= $today;

@@ -84,6 +84,7 @@
         
             </flux:sidebar.group>
             <flux:sidebar.item icon="banknotes"  href="{{ route('collections.index') }}">Pokea Malipo</flux:sidebar.item>
+
             <flux:sidebar.item icon="receipt-refund"  href="{{ route('expenses.index') }}">Matumizi</flux:sidebar.item>
      
 

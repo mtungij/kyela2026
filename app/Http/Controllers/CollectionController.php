@@ -52,6 +52,8 @@ public function show($memberId, Request $request)
             ->orderBy('payment_date', 'desc')
             ->get();
 
+          
+
         $allPayments = $payments->map(function ($p) {
             return [
                 'date' => $p->payment_date,
@@ -61,6 +63,7 @@ public function show($memberId, Request $request)
                 'user' => $p->user->name ?? 'N/A',
             ];
         });
+        
     } else {
         $allPayments = collect();
     }
@@ -80,6 +83,7 @@ public function paymentSms($memberId)
 
     $member = Member::findOrFail($memberId);
     $memberpayments = $member->collections()->first();
+    
    $sumPaid = $member->collections()->sum('amount_paid');
      $remain = $memberpayments->total_amount -  $sumPaid;
      $total = $memberpayments->total_amount;    
