@@ -1,11 +1,10 @@
 <x-layouts.app :title="__('Collections')">
 
-<div class="w-full px-4 lg:px-12">
-    <div class="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
-        <div class="p-4 md:p-6">
-            <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">
-                Search Customer
-            </h3>
+<div class="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+               <div class="p-4 md:p-6">
+                <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">
+                   Search Customer
+                </h3>
 
             @if(!empty($payType))
                 <p class="mb-4 text-sm text-gray-600 dark:text-gray-300">
@@ -17,10 +16,10 @@
             @endif
             
             <!-- Customer Select2 Dropdown -->
-            <div class="mb-4">
+            <div  class="col-span-12">
                 <label for="member-search" class="block text-sm font-medium mb-2 dark:text-gray-300">* Search Customer:</label>
                 <select id="member-search" name="member_id"
-                    class="py-3 px-4 pe-9 block w-full bg-cyan-600 border-gray-200 rounded-lg text-sm focus:border-cyan-500 focus:ring-cyan-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 dark:placeholder-gray-500 dark:focus:ring-gray-600 select2">
+                   class="py-3 px-4 pe-9 block w-full bg-cyan-600 border-gray-200 rounded-lg text-sm focus:border-cyan-500 focus:ring-cyan-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 dark:placeholder-gray-500 dark:focus:ring-gray-600 select2">
                     <option value="">Select customer</option>
                     @foreach($members as $m)
                         <option value="{{ $m->id }}">
@@ -30,9 +29,7 @@
                 </select>
             </div>
 
-            <button type="button" onclick="navigateToMember()" class="w-full sm:w-auto text-white bg-cyan-700 hover:bg-cyan-800 focus:ring-4 focus:ring-cyan-300 font-medium rounded-lg text-sm px-6 py-3 dark:bg-cyan-600 dark:hover:bg-cyan-700 focus:outline-none dark:focus:ring-cyan-800">
-                Tafuta
-            </button>
+        
         </div>
     </div>
 </div>
@@ -161,11 +158,23 @@
 
 <script>
     $(document).ready(function() {
-        $('#member-search').select2({
+        const memberSelect = $('#member-search');
+
+        memberSelect.select2({
             placeholder: "Tafuta member kwa jina au simu...",
             allowClear: true,
             theme: 'classic',
             width: '100%'
+        });
+
+        memberSelect.on('select2:select', function () {
+            navigateToMember();
+        });
+
+        memberSelect.on('change', function () {
+            if (this.value) {
+                navigateToMember();
+            }
         });
     });
 

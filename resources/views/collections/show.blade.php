@@ -104,6 +104,8 @@
                 </div>
             </div>
 
+
+
             <!-- Loan Information Table -->
             <div class="w-full  mb-4 md:mb-0">
                 <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md overflow-auto">
@@ -175,33 +177,30 @@
     </div>
 
     <!-- Search Customer Section -->
-    <div class="mt-6">
-        <div class="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
-            <div class="p-4 md:p-6">
-                <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                    Tafuta Member
-                </h3>
-                
-                <div class="flex flex-col sm:flex-row gap-3 items-end">
-                    <div class="relative w-full">
-                       
-                        <select id="member-search" name="member_id"
-                            class="py-3 px-4 pe-9 block w-full bg-cyan-600 border-gray-200 rounded-lg text-sm focus:border-cyan-500 focus:ring-cyan-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 dark:placeholder-gray-500 dark:focus:ring-gray-600 select2">
-                            <option value="">Chagua Member</option>
-                            @foreach($members as $m)
-                                <option  value="{{ $m->id }}" {{ $m->id == $member->id ? 'selected' : '' }}>
+
+
+ <div class="w-full  md:flex-row items-center ">
+        <!-- Search Dropdown -->
+        
+        <div class="w-full mt-3 mb-3">
+            <label for="memberSelect" class="block text-sm font-medium mb-1 dark:text-gray-300">* Search Customer:</label>
+            <select id="memberSelect" required name="member_id"
+                class="py-2 px-3 block w-full bg-cyan-600 border border-gray-300 rounded-md text-sm focus:border-cyan-500 focus:ring-cyan-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300 dark:placeholder-gray-500 select2">
+                <option value="">Tafuta Member</option>
+                                           @foreach($members as $m)
+
+                     <option  value="{{ $m->id }}" {{ $m->id == $member->id ? 'selected' : '' }}>
                                     {{ mb_strtoupper($m->name , 'UTF-8') }} - {{ $m->phone }}
                                 </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <button type="button" onclick="navigateToMember()" class="w-full sm:w-auto text-white bg-cyan-700 hover:bg-cyan-800 focus:ring-4 focus:ring-cyan-300 font-medium rounded-lg text-sm px-6 py-3 dark:bg-cyan-600 dark:hover:bg-cyan-700 focus:outline-none dark:focus:ring-cyan-800">
-                        Tafuta
-                    </button>
-                </div>
-            </div>
+                <?php endforeach; ?>
+            </select>
         </div>
     </div>
+
+
+
+
+
 
     <!-- Payment Statement Table -->
     <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Historia ya Malipo</h3>
@@ -310,178 +309,101 @@
 
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
-<style>
-    /* Select2 Custom Styling */
-    .select2-container--classic .select2-selection--single {
-        border: 1px solid #06b6d4 !important;
-        border-radius: 0.5rem !important;
-        height: auto !important;
-        padding: 0.625rem !important;
-    }
-    
-    .select2-container--classic .select2-selection--single:focus,
-    .select2-container--classic.select2-container--open .select2-selection--single {
-        border-color: #06b6d4 !important;
-        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1) !important;
-    }
-    
-    .select2-container--classic .select2-selection--single .select2-selection__rendered {
-        padding-left: 0 !important;
-        color: #111827 !important;
-    }
-    
-    .select2-container--classic .select2-selection--single .select2-selection__placeholder {
-        color: #6b7280 !important;
-    }
-    
-    .select2-dropdown {
-        border: 1px solid #06b6d4 !important;
-        border-radius: 0.5rem !important;
-    }
-    
-    /* Search input styling */
-    .select2-search--dropdown .select2-search__field {
-        border: 1px solid #06b6d4 !important;
-        border-radius: 0.5rem !important;
-        padding: 0.625rem !important;
-        outline: none !important;
-        background-color: #ffffff !important;
-        color: #111827 !important;
-    }
-    
-    .select2-search--dropdown .select2-search__field:focus {
-        border-color: #06b6d4 !important;
-        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1) !important;
-    }
-    
-    .select2-search--dropdown .select2-search__field::placeholder {
-        color: #6b7280 !important;
-    }
-    
-    .select2-container--classic .select2-results__option--highlighted[aria-selected] {
-        background-color: #06b6d4 !important;
-        color: #ffffff !important;
-    }
-    
-    .select2-container--classic .select2-results__option[aria-selected=true] {
-        background-color: #ecfeff !important;
-        color: #0e7490 !important;
-    }
-    
-    .select2-container--classic .select2-results__option:hover {
-        background-color: #e0f2fe !important;
-        color: #0e7490 !important;
-    }
-    
-    /* Dark mode support */
-    .dark .select2-container--classic .select2-selection--single {
-        background-color: #374151 !important;
-        border-color: #06b6d4 !important;
-    }
-    
-    .dark .select2-container--classic .select2-selection--single .select2-selection__rendered {
-        color: #ffffff !important;
-    }
-    
-    .dark .select2-dropdown {
-        background-color: #1f2937 !important;
-        border-color: #06b6d4 !important;
-    }
-    
-    .dark .select2-search--dropdown .select2-search__field {
-        background-color: #374151 !important;
-        border-color: #06b6d4 !important;
-        color: #ffffff !important;
-    }
-    
-    .dark .select2-search--dropdown .select2-search__field::placeholder {
-        color: #9ca3af !important;
-    }
-    
-    .dark .select2-search--dropdown .select2-search__field:focus {
-        background-color: #374151 !important;
-        border-color: #06b6d4 !important;
-        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2) !important;
-    }
-    
-    .dark .select2-container--classic .select2-results__option {
-        color: #ffffff !important;
-        background-color: #1f2937 !important;
-    }
-    
-    .dark .select2-container--classic .select2-results__option:hover {
-        background-color: #374151 !important;
-        color: #ffffff !important;
-    }
-    
-    .dark .select2-container--classic .select2-results__option--highlighted[aria-selected] {
-        background-color: #06b6d4 !important;
-        color: #ffffff !important;
-    }
-    
-    .dark .select2-container--classic .select2-results__option[aria-selected=true] {
-        background-color: #0e7490 !important;
-        color: #ffffff !important;
-    }
-</style>
-
-<!-- Select2 JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<style>
+.select2-container--default .select2-selection--single {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    height: auto;
+    color: #06b6d4; 
+    font-size: 0.875rem;
+    position: relative;
+}
+.select2-selection__rendered,
+.select2-selection__clear,
+.select2-selection__arrow {
+    color: #d1d5db;
+}
+.select2-selection__arrow {
+    right: 1rem;
+    top: 0;
+    width: 1.5rem;
+    position: absolute;
+}
+.select2-selection__clear {
+    right: 2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
+}
+.custom-select2-dropdown {
+    background-color: #1f2937;
+    color: #d1d5db;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #ffffff !important; /* Force white text */
+}
+.custom-select2-dropdown .select2-results__option--highlighted {
+    background-color: #06b6d4 !important; /* Tailwind cyan-400 */
+    color: #ffffff !important;
+}
+
+/* White text in the dropdown input if searchable */
+.select2-search__field {
+    color: #ffffff !important;
+    background-color: #1f2937 !important; /* match dark bg */
+    border: 1px solid #374151;
+}
+.custom-select2-dropdown .select2-results__option--highlighted {
+    background-color: #06b6d4;
+    color: #ffffff;
+}
+.custom-select2-container { margin: 0; }
+</style> 
 
 <script>
-    $(document).ready(function() {
-        $('#member-search').select2({
-            placeholder: "Tafuta member kwa jina au simu...",
-            allowClear: true,
-            theme: 'classic',
-            width: '100%'
-        });
-    });
+$(document).ready(function () {
+    const selectConfig = {
+        placeholder: "Select",
+        allowClear: true,
+        width: '100%',
+        dropdownCssClass: 'custom-select2-dropdown',
+        containerCssClass: 'custom-select2-container'
+    };
 
-    function navigateToMember() {
-        const memberId = $('#member-search').val();
+    // Customer Search Select
+    const memberSelect = $('#memberSelect');
+    memberSelect.select2({...selectConfig, placeholder: "Tafuta Mteja"});
+
+    const navigateToMember = (memberId) => {
         if (memberId) {
             window.location.href = "/collections/" + memberId;
-        } else {
-            alert('Tafadhali chagua member kwanza');
         }
-    }
+    };
 
-    function openPaymentModal(type = 'regular') {
-        const modal = document.getElementById('payment-modal');
-        const modalTitle = document.getElementById('modal-title');
-        const penaltyInfo = document.getElementById('penalty-info');
-        const paymentTypeInput = document.getElementById('payment_type');
-        
-        // Set payment type
-        paymentTypeInput.value = type;
-        
-        // Update modal content based on type
-        if (type === 'penalty') {
-            modalTitle.textContent = '⚠️ Lipa Faini';
-            penaltyInfo.classList.remove('hidden');
-        } else {
-            modalTitle.textContent = '💰 Fanya Malipo';
-            penaltyInfo.classList.add('hidden');
-        }
-        
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-
-    function closePaymentModal() {
-        document.getElementById('payment-modal').classList.add('hidden');
-        document.getElementById('payment-modal').classList.remove('flex');
-    }
-
-    // Auto-open modal if there are validation errors
-    @if($errors->any())
-    document.addEventListener('DOMContentLoaded', function() {
-        openPaymentModal();
+    // Auto-navigate when customer is selected
+    memberSelect.on('select2:select', function () {
+        navigateToMember($(this).val());
     });
-    @endif
+
+    memberSelect.on('change', function () {
+        navigateToMember(this.value);
+    });
+
+
+
+   
+});
+
+
 </script>
+
+
 
 </x-layouts.app>
