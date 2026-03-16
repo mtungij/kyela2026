@@ -128,19 +128,18 @@
                             @endif
 
                             @foreach($members as $member)
-                                @php
-                                    $collection = $member->collections->first();
-                                    $penaltyBalance = 0;
-                                    $totalPenalty = 0;
-                                    $penaltyPaid = 0;
+                               @php
+$collection = $member->collections->first();
+$penaltyBalance = 0;
+$totalPenalty = 0;
+$penaltyPaid = 0;
 
-                                    if ($collection) {
-                                        $penaltyBalance = $collection->getCurrentPenaltyBalance();
-                                        $collection->refresh();
-                                        $totalPenalty = $collection->total_penalty;
-                                        $penaltyPaid = $collection->penalty_paid;
-                                    }
-                                @endphp
+if ($collection) {
+    $penaltyBalance = $collection->penalty_balance;
+    $totalPenalty = $collection->total_penalty;
+    $penaltyPaid = $collection->penalty_paid;
+}
+@endphp
                                 <tr class="bg-white border-t dark:bg-gray-900 dark:border-gray-700">
                                     <td class="px-4 py-3">
                                         @if($member->pay_type == 'mchango_mdogo')
@@ -163,9 +162,9 @@
                                             <div class="text-orange-600 dark:text-orange-400 font-bold">
                                                 {{ number_format($penaltyBalance, 0) }} TSh
                                             </div>
-                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                            {{-- <div class="text-xs text-gray-500 dark:text-gray-400">
                                                 Jumla: {{ number_format($totalPenalty, 0) }} | Imelipwa: {{ number_format($penaltyPaid, 0) }}
-                                            </div>
+                                            </div> --}}
                                         @else
                                             <span class="text-gray-500 dark:text-gray-400">0</span>
                                         @endif

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Models\Member;
 use App\Models\Collection;
@@ -34,27 +35,24 @@ public function show($memberId, Request $request)
 {
     $payType = $request->session()->get('pay_type');
 
+
     if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
         $payType = null;
     }
 
-    $member = \App\Models\Member::with('collections')->findOrFail($memberId);
+    $member = Member::with('collections')->findOrFail($memberId);
     $collection = $member->collections()->first(); 
-    $payments = collect();
 
-    if ($collection) {
-        // Calculate current penalty
-        $collection->getCurrentPenaltyBalance();
+//   $member = Member::with('collections')->findOrFail($memberId);
+$collection = $member->collections()->first();
 
-        // Fetch all payments with type
-        $payments = \App\Models\Payment::with('user')
-            ->where('collection_id', $collection->id)
-            ->orderBy('payment_date', 'desc')
-            ->get();
-
-          
-
-        $allPayments = $payments->map(function ($p) {
+if ($collection) {
+    $collection->refresh(); // Ensure latest DB values
+    $allPayments = Payment::with('user')
+        ->where('collection_id', $collection->id)
+        ->orderBy('payment_date', 'desc')
+        ->get()
+        ->map(function ($p) {
             return [
                 'date' => $p->payment_date,
                 'amount' => $p->amount,
@@ -63,10 +61,9 @@ public function show($memberId, Request $request)
                 'user' => $p->user->name ?? 'N/A',
             ];
         });
-        
-    } else {
-        $allPayments = collect();
-    }
+} else {
+    $allPayments = collect();
+}
 
     $members = Member::query()
         ->when($payType, function ($query, $payType) {
@@ -80,7 +77,6 @@ public function show($memberId, Request $request)
 
 public function paymentSms($memberId)
 {
-
     $member = Member::findOrFail($memberId);
     $memberpayments = $member->collections()->first();
     
@@ -107,131 +103,102 @@ $massage = "Habari {$member->name}, tunakukumbusha katika jumla ya kiasi cha kuc
 
     return redirect()->back()->with('success', 'SMS ya malipo imetumwa kwa ' . $member->name);
     
-
-
  
 }
 
-    public function storePayment(Request $request)
-    {
+   public function storePayment(Request $request)
+{
+    $validated = $request->validate([
+        'member_id' => 'required|exists:members,id',
+        'collection_id' => 'required|exists:collections,id',
+        'amount' => 'required|numeric|min:0',
+        'payment_date' => 'required|date',
+        'payment_type' => 'required|in:regular,penalty',
+        'notes' => 'nullable|string',
+    ]);
 
-      $collection = \App\Models\Collection::find($request->collection_id);
+    \DB::transaction(function () use ($validated) {
+        $collection = \App\Models\Collection::find($validated['collection_id']);
+        $paymentAmount = $validated['amount'];
+        $paymentType = $validated['payment_type'];
 
-    $maxAmount = 0;
+        // Ensure the payment does not exceed max allowed
+        if ($paymentType === 'penalty' && $paymentAmount > $collection->penalty_balance) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'amount' => "Kiasi cha malipo cha faini hawezi kuzidi {$collection->penalty_balance}",
+            ]);
+        }
+        if ($paymentType === 'regular' && $paymentAmount > $collection->balance) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'amount' => "Kiasi cha malipo cha mkopo hawezi kuzidi {$collection->balance}",
+            ]);
+        }
 
-    if ($request->payment_type === 'penalty') {
-        $maxAmount = $collection->penalty_balance; // max they can pay is remaining penalty
-    } else {
-        $maxAmount = $collection->balance; // max they can pay is remaining balance
-    }
+        // Update balances based on payment type
+        if ($paymentType === 'penalty') {
+            $collection->penalty_paid += $paymentAmount;
+            $collection->penalty_balance = $collection->total_penalty - $collection->penalty_paid;
+        } else {
+            $collection->amount_paid += $paymentAmount;
+            $collection->balance = $collection->total_amount - $collection->amount_paid;
+        }
 
-        $validated = $request->validate([
-            'member_id' => 'required|exists:members,id',
-            'collection_id' => 'required|exists:collections,id',
-             'amount' => ['required','numeric','min:0', "max:$maxAmount"],
-            'payment_date' => 'required|date',
-            'payment_type' => 'nullable|in:regular,penalty',
-            'notes' => 'nullable|string',
+        // Record payment
+        \App\Models\Payment::create([
+            'member_id' => $validated['member_id'],
+            'collection_id' => $validated['collection_id'],
+            'user_id' => auth()->id(),
+            'amount' => $paymentAmount,
+            'payment_type' => $paymentType,
+            'payment_date' => $validated['payment_date'],
+            'notes' => $validated['notes'] ?? null,
         ]);
 
-        \DB::transaction(function () use ($validated) {
-            $collection = \App\Models\Collection::find($validated['collection_id']);
-           
+        // Update last payment date
+        $collection->last_payment_date = $validated['payment_date'];
 
-          
-            
-            // Calculate current penalty
-            $penaltyBalance = $collection->getCurrentPenaltyBalance();
-            $paymentAmount = $validated['amount'];
-            $paymentType = $validated['payment_type'] ?? 'regular';
-            $penaltyPayment = 0;
-            $loanPayment = 0;
+        // Update collection status
+        if ($collection->balance <= 0 && $collection->penalty_balance <= 0) {
+            $collection->status = 'completed';
+        } elseif ($collection->amount_paid > 0 || $collection->penalty_paid > 0) {
+            $collection->status = 'partial';
+        } else {
+            $collection->status = 'pending';
+        }
 
-            // dd($paymentType);
-            
-            // Determine how to split payment based on type and balances
-            if ($paymentType === 'penalty' || $penaltyBalance > 0) {
-                // First, apply payment to penalty if exists
-                if ($penaltyBalance > 0) {
-                    if ($paymentAmount >= $penaltyBalance) {
-                        // Full penalty payment + remaining to loan
-                        $penaltyPayment = $penaltyBalance;
-                        $loanPayment = $paymentAmount - $penaltyBalance;
-                    } else {
-                        // Partial penalty payment only
-                        $penaltyPayment = $paymentAmount;
-                        $loanPayment = 0;
-                    }
-                } else {
-                    // No penalty, full payment goes to loan
-                    $loanPayment = $paymentAmount;
-                }
-            } else {
-                // No penalty, full payment goes to loan
-                $loanPayment = $paymentAmount;
-            }
+        $collection->save();
 
-            $memberName = Member::find($validated['member_id'])->name;
-            $phone = Member::find($validated['member_id'])->phone;
-            $amount=$validated['amount'];
-            $totalPaid = $collection->amount_paid + $loanPayment;
-            $remain = $collection->total_amount - $totalPaid;
-            // dd($remain);
-      $currentDate = Carbon::today()->format('d-m-Y');
-$massage = "Habari {$memberName}, tumepokea malipo yako ya Tsh "
-    . number_format($amount, 0) .
-    " tarehe {$currentDate}. Jumla uliyolipa mpaka sasa ni Tsh "
-    . number_format($totalPaid, 0) .
-    " na kilichobaki kulipwa ni Tsh "
-    . number_format($remain, 0) .
-    ". Asante kwa ushirikiano wako Kalumbulu Group!";
+        // Send SMS notification
+        $member = \App\Models\Member::find($validated['member_id']);
+        $totalPaid = $collection->amount_paid;
+        $remain = $collection->balance;
+        $currentDate = \Carbon\Carbon::parse($validated['payment_date'])->format('d-m-Y');
 
-        $this->sendsms($phone,$massage);
-            
-            // Create payment record with type
-            \App\Models\Payment::create([
-                'member_id' => $validated['member_id'],
-                'collection_id' => $validated['collection_id'],
-                'user_id' => auth()->id(),
-                'amount' => $validated['amount'],
-                'payment_type' => $penaltyPayment > 0 ? 'penalty' : 'regular',
-                'payment_date' => $validated['payment_date'],
-                'notes' => $validated['notes'] ?? null,
-            ]);
+     $paymentLabel = $paymentType === 'penalty' ? 'Faini' : 'Malipo';
 
-            // Update penalty paid
-            if ($penaltyPayment > 0) {
-                $collection->penalty_paid += $penaltyPayment;
-                $collection->penalty_balance = $collection->total_penalty - $collection->penalty_paid;
-            }
-            
-            // Update loan payment
-            if ($loanPayment > 0) {
-                $collection->amount_paid += $loanPayment;
-                $collection->balance = $collection->total_amount - $collection->amount_paid;
-            }
-            
-            // Update last payment date
-            $collection->last_payment_date = $validated['payment_date'];
+if ($paymentType === 'penalty') {
+  $message = "Habari {$member->name}, umelipa faini ya Tsh "
+    . number_format($paymentAmount, 0)
+    . " tarehe {$currentDate}. Epuka kulaza kuepuka malipo ya faini. "
+    . "Jumla uliyolipa mpaka sasa ni Tsh "
+    . number_format($totalPaid, 0)
+    . ". Asante kwa ushirikiano wako Kalumbulu Group!";
+} else {
+    $message = "Habari {$member->name}, tumepokea malipo yako ya Tsh "
+        . number_format($paymentAmount, 0)
+        . " tarehe {$currentDate}. Jumla uliyolipa mpaka sasa ni Tsh "
+        . number_format($totalPaid, 0)
+        . " na kilichobaki kulipwa ni Tsh "
+        . number_format($remain, 0)
+        . ". Asante kwa ushirikiano wako Kalumbulu Group!";
+}
 
-          
-            
-            // Update status if fully paid (both loan and penalty)
-            if ($collection->balance <= 0 && $collection->penalty_balance <= 0) {
-                $collection->status = 'completed';
-            } elseif ($collection->amount_paid > 0 || $collection->penalty_paid > 0) {
-                $collection->status = 'partial';
-            } else {
-                $collection->status = 'pending';
-            }
-            
-            $collection->save();
-        });
+        $this->sendsms($member->phone, $message);
+    });
 
-        return redirect()->route('collections.show', ['member' => $validated['member_id']])
-            ->with('success', 'Malipo yamefanikiwa kurekodiwa!');
-    }
-
+    return redirect()->route('collections.show', ['member' => $validated['member_id']])
+        ->with('success', 'Malipo yamefanikiwa kurekodiwa!');
+}
 
 
 

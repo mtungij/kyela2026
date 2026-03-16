@@ -42,8 +42,9 @@ class MemberController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-
-          
+// dump($members->toArray() ?? []);
+// exit;
+        //   dd($members);
             
         return view('member.index', compact('members','payType'));
     }
@@ -122,13 +123,13 @@ public function downloadPdf(Request $request)
         $validatedData['amount'] = 5000;
         // Set default penalty if not provided (100% of daily amount)
         if (!isset($validatedData['penalty_per_day']) || $validatedData['penalty_per_day'] == 0) {
-            $validatedData['penalty_per_day'] = 5000; // 100% of 5000
+            $validatedData['penalty_per_day'] = 2000; // 100% of 5000
         }
     } elseif ($validatedData['pay_type'] === 'mchango_mkubwa') {
         $validatedData['amount'] = 10000;
         // Set default penalty if not provided (100% of daily amount)
         if (!isset($validatedData['penalty_per_day']) || $validatedData['penalty_per_day'] == 0) {
-            $validatedData['penalty_per_day'] = 10000; // 100% of 10000
+            $validatedData['penalty_per_day'] = 3000; // 100% of 10000
         }
     }
 

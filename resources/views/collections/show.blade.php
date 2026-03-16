@@ -79,11 +79,21 @@
 
                     @if($collection)
                     <ul class="mt-5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 divide-y divide-gray-300 dark:divide-gray-600 rounded-lg shadow-sm text-sm">
-                        <li class="flex items-center justify-between py-2 px-3">
+                        {{-- <li class="flex items-center justify-between py-2 px-3">
                             <span class="font-bold text-base">Hali</span>
                             <span class="px-3 py-1 rounded-full text-xs font-medium {{ $collection->status === 'completed' ? 'bg-green-500 text-white' : ($collection->status === 'partial' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white') }}">
                                 {{ $collection->status === 'completed' ? 'Kamaliza' : ($collection->status === 'partial' ? 'Inaendelea' : 'Hajaanza') }}
                             </span>
+                        </li> --}}
+
+                         <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
+                            <span>kuanza</span>
+                            <span>{{\Carbon\Carbon::parse($member->start_date)->format('d-m-Y')}}</span>
+                        </li>
+
+                         <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
+                            <span>kumaliza</span>
+                            <span>{{\Carbon\Carbon::parse($member->end_date)->format('d-m-Y')}}</span>
                         </li>
                       
                          <li class="flex items-center justify-between py-2 px-3 font-bold text-base">

@@ -25,7 +25,7 @@ Route::get('dashboard', [DashboardController::class, 'index'])
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
-    Route::get('settings/profile', Profile::class)->name('profile.edit');
+    Route::get('settings/profilePokeaPokea', Profile::class)->name('profile.edit');
     Route::get('settings/password', Password::class)->name('user-password.edit');
     Route::get('settings/appearance', Appearance::class)->name('appearance.edit');
     
@@ -52,6 +52,8 @@ Route::middleware(['auth'])->group(function () {
     
     Route::get('daily-report', [DailyReportController::class, 'index'])->name('daily.report');
     Route::get('daily-report/download-pdf', [DailyReportController::class, 'downloadPdf'])->name('daily.report.download-pdf');
+Route::post('/daily/close-account', [DailyReportController::class, 'closeAccount'])
+     ->name('daily.close-account');
     
     Route::get('penalties/report', [PaymentReportController::class, 'penaltyReport'])->name('penalties.report');
     Route::get('penalties/download-pdf', [PaymentReportController::class, 'penaltyDownloadPdf'])->name('penalties.download-pdf');
@@ -65,6 +67,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
     Route::put('expenses/{id}', [ExpenseController::class, 'update'])->name('expenses.update');
     Route::delete('expenses/{id}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+
+   
     
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(

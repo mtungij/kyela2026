@@ -2,26 +2,74 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Collection;
+use App\Models\Member;
 use App\Models\Payment;
 use App\Models\Expense;
+use App\Models\User;
+use App\Notifications\AccountClosed; // <-- add this line
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 class DailyReportController extends Controller
 {
+
+public function closeAccount()
+{
+    $today = Carbon::today();
+
+    $membersNotPaid = Member::whereDate('start_date', '<=', $today)
+        ->whereDoesntHave('payments', function ($query) use ($today) {
+            $query->whereDate('payment_date', $today);
+        })
+        ->get();
+
+    DB::transaction(function () use ($membersNotPaid) {
+
+        foreach ($membersNotPaid as $member) {
+
+            $collection = Collection::firstOrCreate(
+                ['member_id' => $member->id],
+                [
+                    'total_penalty' => 0,
+                    'penalty_balance' => 0
+                ]
+            );
+
+            $collection->total_penalty += $member->penalty_per_day;
+            $collection->penalty_balance += $member->penalty_per_day;
+
+            $collection->save();
+        }
+    });
+
+    return redirect()->back()->with(
+        'success',
+        'Hesabu imefungwa na faini zimeongezwa kwa wanachama waliokosa kulipa leo.'
+    );
+}
+
     public function index(Request $request)
     {
+
+      $payType = $request->session()->get('pay_type');
+
+
+        if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
+            $payType = null;
+        }
+
         // Get date from request or use today
         $date = $request->input('date') ? Carbon::parse($request->input('date')) : Carbon::today();
         
-        // Get pay_type filter
-        $payType = $request->input('pay_type');
+     
         
         // Total Members (filtered by pay_type if provided)
         $totalMembers = \App\Models\Member::when($payType, function ($query) use ($payType) {
             return $query->where('pay_type', $payType);
-        })->count();
+        })->whereDate('start_date', '<=', $date)->count();
         
         // Members who completed payment (collections with balance = 0 and penalty_balance = 0)
         $completedMembers = \App\Models\Collection::where('balance', '<=', 0)
@@ -33,7 +81,10 @@ class DailyReportController extends Controller
         $expectedToday = 0;
         $members = \App\Models\Member::when($payType, function ($query) use ($payType) {
             return $query->where('pay_type', $payType);
-        })->get();
+        })
+        ->whereDate('start_date', '<=', $date)
+        ->get();
+        // dd($members);
         foreach ($members as $member) {
             $collection = $member->collections()->first();
             if ($collection && $collection->balance > 0) {
@@ -65,6 +116,21 @@ class DailyReportController extends Controller
                 });
             })
             ->sum('amount');
+
+
+            $totaMemberPaidToday = Payment::whereDate('payment_date', $date)
+            ->where ('payment_type', 'regular')
+            ->when($payType, function ($query) use ($payType) {
+                return $query->whereHas('member', function ($q) use ($payType) {
+                    $q->where('pay_type', $payType);
+                });
+            })
+            ->distinct('member_id')
+            ->count('member_id');
+
+            // dd($totaMemberPaidToday);
+
+            // dd($totalCollectionPayments);
         
         // Total Penalty Payments
         $totalPenaltyPayments = Payment::whereDate('payment_date', $date)
@@ -112,7 +178,8 @@ class DailyReportController extends Controller
             'totalIncome',
             'netAmount',
             'payments',
-            'expenses'
+            'expenses',
+            'totaMemberPaidToday'
         ));
     }
 
