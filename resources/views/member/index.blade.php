@@ -17,18 +17,7 @@
                     id="searchForm"
                     class="flex flex-col w-full gap-4 sm:flex-row sm:flex-wrap md:w-2/3"
                 >
-                    <!-- Search -->
-                    <div class="relative w-full sm:flex-1">
-                        <input
-                            id="simple-search"
-                            name="search"
-                            value="{{ request('search') }}"
-                            placeholder="Search by name, phone, address"
-                            class="w-full p-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg
-                                   focus:ring-cyan-500 focus:border-cyan-500
-                                   dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-                        />
-                    </div>
+                 
 
                     <!-- Buttons -->
                     <div class="flex flex-col gap-2 sm:flex-row sm:space-x-2">
@@ -123,16 +112,33 @@
                 @if(auth()->user()->isAdmin())
                 <form method="POST" action="{{ route('members.forgive-penalty.bulk') }}" id="bulk-penalty-form">
                     @csrf
-                    <div class="mb-3 flex items-center justify-between">
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Chagua wenye faini kisha bofya samehe kwa pamoja</div>
-                        <button
-                            type="submit"
-                            id="bulk-forgive-btn"
-                            disabled
-                            class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Samehe Faini (Selected)
-                        </button>
+                    <div class="mb-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Chagua wenye faini kisha samehe zote au samehe kwa tarehe maalum</div>
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <input
+                                type="date"
+                                id="bulk-forgive-date"
+                                name="forgive_date"
+                                class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            >
+                            <button
+                                type="submit"
+                                id="bulk-forgive-by-date-btn"
+                                formaction="{{ route('members.forgive-penalty.bulk-by-date') }}"
+                                disabled
+                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Samehe Kwa Tarehe
+                            </button>
+                            <button
+                                type="submit"
+                                id="bulk-forgive-btn"
+                                disabled
+                                class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Samehe Faini Zote
+                            </button>
+                        </div>
                     </div>
                 @endif
 
@@ -185,8 +191,14 @@
     }
 
     // ✅ Paid Today Logic
-    $paidToday = $member->payments->isNotEmpty();
-    $todayAmount = $member->payments->sum('amount');
+    $today = now()->startOfDay();
+    $shouldPayToday = $member->shouldPayToday();
+    $dateNotReached = !$member->hasPaymentStarted();
+    $todayPayment = $member->payments->first(function ($payment) use ($today) {
+        return $payment->payment_date->startOfDay()->equalTo($today);
+    });
+    $paidToday = $todayPayment !== null;
+    $todayAmount = $todayPayment?->amount ?? 0;
 @endphp
                                 <tr class="bg-white border-t dark:bg-gray-900 dark:border-gray-700">
                                     @if(auth()->user()->isAdmin())
@@ -215,18 +227,24 @@
      <td class="px-4 py-3 font-semibold uppercase flex items-center gap-2">
     {{ $member->name }}
 
-    @if($paidToday)
-        <span title="Amelipa leo ({{ number_format($todayAmount, 0) }} TSh)" class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.2 7.2a1 1 0 01-1.415 0l-3.2-3.2a1 1 0 111.414-1.42l2.493 2.494 6.493-6.494a1 1 0 011.415 0z" clip-rule="evenodd" />
-            </svg>
+    @if($dateNotReached)
+        <span title="Tarehe haijakoingia" class="inline-flex items-center justify-center px-2 py-1 text-xs font-semibold text-yellow-700 bg-yellow-100 rounded dark:bg-yellow-900/40 dark:text-yellow-300">
+            {{ 'Tarehe haijaingia' }}
         </span>
-    @else
-        <span title="Hajalipa leo" class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-10.293a1 1 0 00-1.414-1.414L10 8.586 7.707 6.293a1 1 0 00-1.414 1.414L8.586 10l-2.293 2.293a1 1 0 101.414 1.414L10 11.414l2.293 2.293a1 1 0 001.414-1.414L11.414 10l2.293-2.293z" clip-rule="evenodd" />
-            </svg>
-        </span>
+    @elseif($shouldPayToday)
+        @if($paidToday)
+            <span title="Amelipa leo ({{ number_format($todayAmount, 0) }} TSh)" class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.2 7.2a1 1 0 01-1.415 0l-3.2-3.2a1 1 0 111.414-1.42l2.493 2.494 6.493-6.494a1 1 0 011.415 0z" clip-rule="evenodd" />
+                </svg>
+            </span>
+        @else
+            <span title="Hajalipa leo" class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-10.293a1 1 0 00-1.414-1.414L10 8.586 7.707 6.293a1 1 0 00-1.414 1.414L8.586 10l-2.293 2.293a1 1 0 101.414 1.414L10 11.414l2.293 2.293a1 1 0 001.414-1.414L11.414 10l2.293-2.293z" clip-rule="evenodd" />
+                </svg>
+            </span>
+        @endif
     @endif
 </td>
                                     <td class="px-4 py-3">{{ $member->phone }}</td>
@@ -790,6 +808,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectAll = document.getElementById('select-all-penalty');
     const checkboxes = Array.from(document.querySelectorAll('.penalty-checkbox'));
     const bulkButton = document.getElementById('bulk-forgive-btn');
+    const bulkByDateButton = document.getElementById('bulk-forgive-by-date-btn');
+    const forgiveDateInput = document.getElementById('bulk-forgive-date');
 
     if (!selectAll || !bulkButton || checkboxes.length === 0) {
         return;
@@ -797,7 +817,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const syncButtonState = () => {
         const checkedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
-        bulkButton.disabled = checkedCount === 0;
+        const hasSelection = checkedCount > 0;
+        bulkButton.disabled = !hasSelection;
+
+        if (bulkByDateButton) {
+            const hasDate = !!(forgiveDateInput && forgiveDateInput.value);
+            bulkByDateButton.disabled = !(hasSelection && hasDate);
+        }
     };
 
     selectAll.addEventListener('change', function () {
@@ -814,6 +840,13 @@ document.addEventListener('DOMContentLoaded', function () {
             syncButtonState();
         });
     });
+
+    if (forgiveDateInput) {
+        forgiveDateInput.addEventListener('change', syncButtonState);
+        forgiveDateInput.addEventListener('input', syncButtonState);
+    }
+
+    syncButtonState();
 });
 </script>
 

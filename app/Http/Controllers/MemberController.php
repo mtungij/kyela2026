@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\Collection;
 use App\Models\Payment;
+use App\Models\PenaltyForgiveness;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -378,6 +379,99 @@ public function downloadPdf(Request $request)
 
         return $this->redirectToMembersBySession()
             ->with('success', "Faini zimesamehewa kwa wanachama {$forgivenCount}.");
+    }
+
+    public function bulkForgivePenaltyByDate(Request $request)
+    {
+        if (!auth()->user()->isAdmin()) {
+            return $this->redirectToMembersBySession()
+                ->with('error', 'Hairuhusiwi kusamehe faini kwa tarehe.');
+        }
+
+        $validated = $request->validate([
+            'member_ids' => ['required', 'array', 'min:1'],
+            'member_ids.*' => ['integer', 'exists:members,id'],
+            'forgive_date' => ['required', 'date'],
+        ]);
+
+        $forgiveDate = Carbon::parse($validated['forgive_date'])->toDateString();
+
+        $isClosedDate = DB::table('closed_accounts')
+            ->whereDate('date', $forgiveDate)
+            ->exists();
+
+        if (!$isClosedDate) {
+            return $this->redirectToMembersBySession()
+                ->with('error', 'Tarehe uliyochagua haipo kwenye Funga Hesabu.');
+        }
+
+        $members = Member::query()->whereIn('id', $validated['member_ids'])->get();
+        $forgivenCount = 0;
+
+        DB::transaction(function () use ($members, $forgiveDate, &$forgivenCount) {
+            foreach ($members as $member) {
+                $hasAnyPayment = Payment::where('member_id', $member->id)
+                    ->whereDate('payment_date', $forgiveDate)
+                    ->exists();
+
+                if ($hasAnyPayment) {
+                    continue;
+                }
+
+                $alreadyForgiven = PenaltyForgiveness::where('member_id', $member->id)
+                    ->whereDate('forgiven_date', $forgiveDate)
+                    ->exists();
+
+                if ($alreadyForgiven) {
+                    continue;
+                }
+
+                $penaltyAmount = max((float) ($member->penalty_per_day ?? 0), 0);
+                if ($penaltyAmount <= 0) {
+                    continue;
+                }
+
+                $collection = Collection::where('member_id', $member->id)->first();
+                if (!$collection) {
+                    continue;
+                }
+
+                $currentTotal = (float) $collection->total_penalty;
+                $currentPaid = (float) $collection->penalty_paid;
+
+                $newTotal = max($currentTotal - $penaltyAmount, 0);
+                $newPaid = min($currentPaid, $newTotal);
+                $newBalance = max($newTotal - $newPaid, 0);
+
+                Collection::where('id', $collection->id)->update([
+                    'total_penalty' => $newTotal,
+                    'penalty_paid' => $newPaid,
+                    'penalty_balance' => $newBalance,
+                    'last_payment_date' => now()->toDateString(),
+                    'status' => ($collection->balance <= 0 && $newBalance <= 0)
+                        ? 'completed'
+                        : (($collection->amount_paid > 0 || $newPaid > 0) ? 'partial' : 'pending'),
+                ]);
+
+                PenaltyForgiveness::create([
+                    'member_id' => $member->id,
+                    'user_id' => auth()->id(),
+                    'forgiven_date' => $forgiveDate,
+                    'amount' => $penaltyAmount,
+                    'notes' => 'Bulk forgiveness by date',
+                ]);
+
+                $forgivenCount++;
+            }
+        });
+
+        if ($forgivenCount === 0) {
+            return $this->redirectToMembersBySession()
+                ->with('info', 'Hakuna faini iliyosamehewa kwa tarehe hiyo kwa waliochaguliwa.');
+        }
+
+        return $this->redirectToMembersBySession()
+            ->with('success', "Faini zimesamehewa kwa wanachama {$forgivenCount} tarehe {$forgiveDate}.");
     }
 
     private function redirectToMembersBySession()

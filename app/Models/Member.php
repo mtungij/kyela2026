@@ -36,6 +36,11 @@ class Member extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function penaltyForgivenesses(): HasMany
+    {
+        return $this->hasMany(PenaltyForgiveness::class);
+    }
+
     public function getTotalCollectionAmountAttribute()
     {
         return $this->amount * $this->number_type;

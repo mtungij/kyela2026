@@ -84,6 +84,7 @@
                 <flux:sidebar.item href="{{ route('payments.report', ['pay_type' => 'mchango_mkubwa']) }}">Wamelipa - Mkubwa</flux:sidebar.item>
 
                 <flux:sidebar.item href="{{ route('reports.member-statement') }}">Member Statement</flux:sidebar.item>
+                <flux:sidebar.item href="{{ route('reports.member-penalty-statement') }}">Member Penalty Statement</flux:sidebar.item>
                 
                 <flux:sidebar.item href="{{ route('penalties.report') }}">Ambao Waliolipa Faini</flux:sidebar.item>
              

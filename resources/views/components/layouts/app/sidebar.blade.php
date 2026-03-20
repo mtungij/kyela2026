@@ -109,6 +109,7 @@
                 @endif
                 
                     <flux:sidebar.item href="{{ route('reports.member-statement') }}">Member Statement</flux:sidebar.item>
+                    <flux:sidebar.item href="{{ route('reports.member-penalty-statement') }}">Member Penalty Statement</flux:sidebar.item>
                 
                 <flux:sidebar.item href="{{ $payType ? route('penalties.report', $reportParams) : route('penalties.report') }}">Ambao Waliolipa Faini</flux:sidebar.item>
              

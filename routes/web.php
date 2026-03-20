@@ -43,6 +43,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('member/{id}',[MemberController::class,'destroy'])->name('members.destroy');
     Route::post('member/{id}/forgive-penalty',[MemberController::class,'forgivePenalty'])->name('members.forgive-penalty');
     Route::post('member/forgive-penalty/bulk',[MemberController::class,'bulkForgivePenalty'])->name('members.forgive-penalty.bulk');
+    Route::post('member/forgive-penalty/bulk-by-date',[MemberController::class,'bulkForgivePenaltyByDate'])->name('members.forgive-penalty.bulk-by-date');
     Route::get('members/download-pdf', [MemberController::class, 'downloadPdf'])->name('members.download-pdf');
 
     Route::get('collections/index',[CollectionController::class,'index'])->name('collections.index');
@@ -62,6 +63,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('reports/member-statement', function () {
         return view('payments.member-statements');
     })->name('reports.member-statement');
+    Route::get('reports/member-penalty-statement', function () {
+        return view('payments.member-penalty-statements');
+    })->name('reports.member-penalty-statement');
     Route::get('reports/member-statement/{member}/download-pdf', [PaymentReportController::class, 'memberStatementDownloadPdf'])
         ->name('reports.member-statement.download-pdf');
     
