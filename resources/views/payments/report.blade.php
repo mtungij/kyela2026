@@ -35,35 +35,27 @@
 
     <!-- Filter Form -->
     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6">
-        <form method="GET" action="{{ route('payments.report') }}" class="space-y-4">
+        <form method="GET" action="{{ route('payments.report') }}" class="space-y-4" id="paymentFilterForm">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <!-- From Date -->
                 <div>
-                    <label for="from_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Tarehe Ya Kuanza
-                    </label>
-                    <input 
-                        type="date" 
-                        name="from_date" 
-                        id="from_date"
-                        value="{{ $fromDate }}"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-700 dark:text-white"
-                    />
+                   <label for="payment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Chagua Tarehe
+    </label>
+                  <div>
+   
+    <input 
+        type="date" 
+        name="payment_date" 
+        id="payment_date"
+        value="{{ request('payment_date') }}"
+        onchange="document.getElementById('paymentFilterForm').submit()"
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-700 dark:text-white"
+    />
+</div>
                 </div>
 
-                <!-- To Date -->
-                <div>
-                    <label for="to_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Tarehe Ya Kuishia
-                    </label>
-                    <input 
-                        type="date" 
-                        name="to_date" 
-                        id="to_date"
-                        value="{{ $toDate }}"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-700 dark:text-white"
-                    />
-                </div>
+               
 
                 <!-- Pay Type -->
                 <div>
@@ -89,10 +81,7 @@
                     >
                         Chafya
                     </button>
-                    <a 
-                        href="{{ route('payments.download-pdf', ['from_date' => $fromDate, 'to_date' => $toDate, 'pay_type' => $payType ?? null]) }}"
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
-                    >
+                    
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2m0 0v-8m0 8l-6-4m6 4l6-4"></path>
                         </svg>
@@ -126,42 +115,65 @@
 
     <!-- Payments Table -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-700 dark:text-gray-300">
+
+    <div class="mb-4">
+    <input 
+        type="text" 
+        id="searchInput"
+        placeholder="Tafuta jina la mwanachama..."
+        class="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 dark:bg-gray-700 dark:text-white"
+    >
+</div>
+       <div class="overflow-x-auto rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <table class="w-full text-sm text-left text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-7
                 <thead class="bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-200 font-semibold sticky top-0">
                     <tr>
+                    <th class="px-6 py-3 border-b dark:border-gray-700">S/No</th>
                         <th class="px-6 py-3 border-b dark:border-gray-700">Jina la Mwanachama</th>
-                        <th class="px-6 py-3 border-b dark:border-gray-700">Simu</th>
-                        <th class="px-6 py-3 border-b dark:border-gray-700">Tarehe ya Malipo</th>
+                     
+                        
                         <th class="px-6 py-3 border-b dark:border-gray-700 text-right">Kiasi</th>
-                        <th class="px-6 py-3 border-b dark:border-gray-700">Kumbuka</th>
-                        <th class="px-6 py-3 border-b dark:border-gray-700">Alirekodi na</th>
+
+                          <th class="px-6 py-3 border-b dark:border-gray-700 text-right">tenda</th>
+                       
+                       
                         <th class="px-6 py-3 border-b dark:border-gray-700 text-center">Hatua</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($payments as $payment)
+                    @forelse($payments as $index => $payment)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                             <td class="px-6 py-3 font-medium text-gray-900 dark:text-white">
-                                <a href="{{ route('collections.show', $payment->member->id) }}" class="text-cyan-600 dark:text-cyan-400 hover:underline">
-                                    {{ $payment->member->name }}
-                                </a>
+                                {{ $index + 1 }}
                             </td>
-                            <td class="px-6 py-3">
-                                {{ $payment->member->phone }}
+                            <td class="px-6 py-3 font-medium text-gray-900 dark:text-white uppercase">
+                                {{ $payment->member->name }}
                             </td>
-                            <td class="px-6 py-3">
-                                {{ $payment->payment_date->format('d/m/Y') }}
-                            </td>
+                          
+                         
                             <td class="px-6 py-3 text-right font-semibold text-green-600 dark:text-green-400">
                                 {{ number_format($payment->amount, 0) }}
                             </td>
-                            <td class="px-6 py-3 text-xs text-gray-500 dark:text-gray-400">
-                                {{ $payment->notes ?? '-' }}
-                            </td>
-                            <td class="px-6 py-3 text-xs">
-                                {{ $payment->user->name ?? 'N/A' }}
-                            </td>
+                        <td class="px-6 py-3">
+    <a href="{{ route('payments.member.statement', $payment->member->id) }}" class="inline-flex items-center justify-center text-green-500 hover:text-green-600 transition">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" 
+             fill="none" 
+             viewBox="0 0 24 24" 
+             stroke-width="1.5" 
+             stroke="currentColor" 
+             class="w-5 h-5">
+             
+            <path stroke-linecap="round" stroke-linejoin="round" 
+                  d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+            
+            <path stroke-linecap="round" stroke-linejoin="round" 
+                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+
+    </a>
+</td>
+                          
                             <td class="px-6 py-3 text-center">
                                 @if(auth()->user()->isAdmin())
                                 <form action="{{ route('payments.delete', $payment->id) }}" method="POST" class="inline" onsubmit="return confirm('Je, una hakika kuwa ungetaka kufuta malipo haya? Hatua hii haiwezi kurudi.');">
@@ -193,5 +205,20 @@
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function () {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        let nameCell = row.querySelector('td:first-child');
+        if (nameCell) {
+            let text = nameCell.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        }
+    });
+});
+</script>
 
 </x-layouts.app>

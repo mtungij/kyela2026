@@ -96,6 +96,7 @@
                         />
                     </div>
                 </div>
+     
                 <div class="relative overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
                     <table id="members-table" class="w-full text-sm text-left text-gray-700 dark:text-gray-300">
                         <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-800 dark:text-gray-200">
@@ -127,18 +128,23 @@
                                 </tr>
                             @endif
 
-                            @foreach($members as $member)
-                               @php
-$collection = $member->collections->first();
-$penaltyBalance = 0;
-$totalPenalty = 0;
-$penaltyPaid = 0;
+         @foreach($members as $member)
+@php
+    $collection = $member->collections->first();
 
-if ($collection) {
-    $penaltyBalance = $collection->penalty_balance;
-    $totalPenalty = $collection->total_penalty;
-    $penaltyPaid = $collection->penalty_paid;
-}
+    $penaltyBalance = 0;
+    $totalPenalty = 0;
+    $penaltyPaid = 0;
+
+    if ($collection) {
+        $penaltyBalance = $collection->penalty_balance;
+        $totalPenalty = $collection->total_penalty;
+        $penaltyPaid = $collection->penalty_paid;
+    }
+
+    // ✅ Paid Today Logic
+    $paidToday = $member->payments->isNotEmpty();
+    $todayAmount = $member->payments->sum('amount');
 @endphp
                                 <tr class="bg-white border-t dark:bg-gray-900 dark:border-gray-700">
                                     <td class="px-4 py-3">
@@ -150,7 +156,19 @@ if ($collection) {
                                             <img class="w-10 h-10 rounded-full" src="{{ asset('images/member.png') }}" alt="Member">
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 font-semibold uppercase">{{ $member->name }}</td>
+     <td class="px-4 py-3 font-semibold uppercase flex items-center gap-2">
+    {{ $member->name }}
+
+    @if($paidToday)
+        <span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+            Amelipa {{ number_format($todayAmount, 0) }} Leo
+        </span>
+    @else
+        <span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
+            Hajalipa Leo
+        </span>
+    @endif
+</td>
                                     <td class="px-4 py-3">{{ $member->phone }}</td>
                                  
                                     <td class="px-4 py-3">{{ \Carbon\Carbon::parse($member->start_date)->format('d-m-Y') }}</td>

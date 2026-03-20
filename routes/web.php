@@ -7,6 +7,8 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\PaymentReportController;
 use App\Http\Controllers\UserController;
+use App\Models\Member;
+use Illuminate\Http\Request;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -45,12 +47,30 @@ Route::middleware(['auth'])->group(function () {
     Route::get('collections/index',[CollectionController::class,'index'])->name('collections.index');
     Route::get('collections/{member}',[CollectionController::class,'show'])->name('collections.show');
     Route::post('collections/store-payment',[CollectionController::class,'storePayment'])->name('collections.storePayment');
+
+    Route::get('payments/member/{member}/statement', function (Member $member, Request $request) {
+        $payType = $request->session()->get('pay_type');
+
+        if (in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true) && $member->pay_type !== $payType) {
+            abort(403);
+        }
+
+        return view('payments.member-statement', compact('member'));
+    })->name('payments.member.statement');
+
+    Route::get('reports/member-statement', function () {
+        return view('payments.member-statements');
+    })->name('reports.member-statement');
+    Route::get('reports/member-statement/{member}/download-pdf', [PaymentReportController::class, 'memberStatementDownloadPdf'])
+        ->name('reports.member-statement.download-pdf');
     
-    Route::get('payments/report', [PaymentReportController::class, 'index'])->name('payments.report');
+
+        Route::get('payments/report', [PaymentReportController::class, 'index'])->name('payments.report');
     Route::get('payments/download-pdf', [PaymentReportController::class, 'downloadPdf'])->name('payments.download-pdf');
     Route::delete('payments/{paymentId}', [PaymentReportController::class, 'deletePayment'])->name('payments.delete');
     
-    Route::get('daily-report', [DailyReportController::class, 'index'])->name('daily.report');
+      Route::livewire('daily-report', 'reports.daily-report')->name('daily.report');
+
     Route::get('daily-report/download-pdf', [DailyReportController::class, 'downloadPdf'])->name('daily.report.download-pdf');
 Route::post('/daily/close-account', [DailyReportController::class, 'closeAccount'])
      ->name('daily.close-account');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use App\Models\Collection;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -15,39 +16,69 @@ class MemberController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
-    {
-        $search = $request->get('search');
-        $payType = $request->get('pay_type', $request->route('pay_type'));
+public function index(Request $request)
+{
+    $search = $request->get('search');
+    $payType = $request->get('pay_type', $request->route('pay_type'));
+    $paidTodayFilter = $request->get('paid_today');
 
-        if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
-            $payType = null;
-        }
-        
-        $members = Member::query()
-            ->with('collections')
-            ->when($search, function($query, $search) {
-                return $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%")
-                      ->orWhere('address', 'like', "%{$search}%")
-                      ->orWhere('business_address', 'like', "%{$search}%");
-                });
-            })
-
-             ->when($payType, function($query, $payType) {
-        return $query->where('pay_type', $payType);
-    })
-
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-
-// dump($members->toArray() ?? []);
-// exit;
-        //   dd($members);
-            
-        return view('member.index', compact('members','payType'));
+    if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
+        $payType = null;
     }
+
+    $today = Carbon::today();
+
+    $members = Member::query()
+        ->with([
+            'collections',
+            'payments' => function ($q) use ($today) {
+                $q->whereDate('payment_date', $today)
+                  ->where('payment_type', 'regular');
+            }
+        ])
+
+        // ✅ Filter: Paid Today Only
+        ->when($paidTodayFilter, function ($query) use ($today) {
+            $query->whereHas('payments', function ($q) use ($today) {
+                $q->whereDate('payment_date', $today)
+                  ->where('payment_type', 'regular');
+            });
+        })
+
+        ->when($search, function ($query, $search) {
+            return $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%")
+                  ->orWhere('business_address', 'like', "%{$search}%");
+            });
+        })
+
+        ->when($payType, function ($query, $payType) {
+            return $query->where('pay_type', $payType);
+        })
+
+        ->orderBy('created_at', 'desc')
+        ->paginate(10)
+        ->withQueryString(); // ✅ keep filters when paginating
+
+    // ✅ Dashboard Stats
+    $totalPaidToday = Payment::whereDate('payment_date', $today)
+        ->where('payment_type', 'regular')
+        ->sum('amount');
+
+    $countPaidMembersToday = Payment::whereDate('payment_date', $today)
+        ->where('payment_type', 'regular')
+        ->distinct('member_id')
+        ->count('member_id');
+
+    return view('member.index', compact(
+        'members',
+        'payType',
+        'totalPaidToday',
+        'countPaidMembersToday'
+    ));
+}
 
 
 

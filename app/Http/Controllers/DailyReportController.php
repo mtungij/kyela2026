@@ -16,17 +16,31 @@ use Illuminate\Support\Facades\DB;
 class DailyReportController extends Controller
 {
 
-public function closeAccount()
+public function closeAccount(Request $request)
 {
-    $today = Carbon::today();
+    $date = $request->input('date')
+        ? Carbon::parse($request->input('date'))->startOfDay()
+        : Carbon::today();
 
-    $membersNotPaid = Member::whereDate('start_date', '<=', $today)
-        ->whereDoesntHave('payments', function ($query) use ($today) {
-            $query->whereDate('payment_date', $today);
+    $alreadyClosed = DB::table('closed_accounts')
+        ->whereDate('date', $date)
+        ->exists();
+
+    if ($alreadyClosed) {
+        return redirect()->back()->with(
+            'success',
+            'Hesabu ilikuwa tayari imefungwa tarehe ' . $date->format('d/m/Y')
+        );
+    }
+
+    $membersNotPaid = Member::whereDate('start_date', '<=', $date)
+        ->whereDoesntHave('payments', function ($query) use ($date) {
+            $query->whereDate('payment_date', $date)
+                ->where('payment_type', 'regular');
         })
         ->get();
 
-    DB::transaction(function () use ($membersNotPaid) {
+    DB::transaction(function () use ($membersNotPaid, $date) {
 
         foreach ($membersNotPaid as $member) {
 
@@ -34,20 +48,28 @@ public function closeAccount()
                 ['member_id' => $member->id],
                 [
                     'total_penalty' => 0,
-                    'penalty_balance' => 0
+                    'penalty_balance' => 0,
+                    'last_payment_date' => $date->toDateString(),
                 ]
             );
 
             $collection->total_penalty += $member->penalty_per_day;
             $collection->penalty_balance += $member->penalty_per_day;
+            $collection->last_payment_date = $date->toDateString();
 
             $collection->save();
         }
+
+        DB::table('closed_accounts')->insert([
+            'date' => $date->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     });
 
     return redirect()->back()->with(
         'success',
-        'Hesabu imefungwa na faini zimeongezwa kwa wanachama waliokosa kulipa leo.'
+        'Hesabu imefungwa tarehe ' . $date->format('d/m/Y') . ' na faini zimeongezwa kwa waliokosa regular payment.'
     );
 }
 

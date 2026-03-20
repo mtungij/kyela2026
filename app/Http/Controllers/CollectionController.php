@@ -108,6 +108,8 @@ $massage = "Habari {$member->name}, tunakukumbusha katika jumla ya kiasi cha kuc
 
    public function storePayment(Request $request)
 {
+    $returnTo = $request->input('return_to');
+
     $validated = $request->validate([
         'member_id' => 'required|exists:members,id',
         'collection_id' => 'required|exists:collections,id',
@@ -195,6 +197,11 @@ if ($paymentType === 'penalty') {
 
         $this->sendsms($member->phone, $message);
     });
+
+    if ($returnTo && str_starts_with($returnTo, url('/'))) {
+        return redirect()->to($returnTo)
+            ->with('success', 'Malipo yamefanikiwa kurekodiwa!');
+    }
 
     return redirect()->route('collections.show', ['member' => $validated['member_id']])
         ->with('success', 'Malipo yamefanikiwa kurekodiwa!');

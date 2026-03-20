@@ -8,100 +8,256 @@ use App\Models\Collection;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PaymentReportController extends Controller
 {
+    public function memberStatementDownloadPdf(Member $member, Request $request)
+    {
+        $payType = $request->session()->get('pay_type');
+
+        if (in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true) && $member->pay_type !== $payType) {
+            abort(403);
+        }
+
+        $collection = $member->collections()->orderByDesc('id')->first();
+        $schedule = [];
+
+        if ($member->start_date && $member->type && $member->amount) {
+            $currentDate = Carbon::parse($member->start_date)->startOfDay();
+            $today = now()->endOfDay();
+            $expectedAmount = (float) $member->amount;
+
+            $regularPayments = Payment::where('member_id', $member->id)
+                ->where('payment_type', 'regular')
+                ->orderBy('payment_date')
+                ->get();
+
+            $allPaymentDates = Payment::where('member_id', $member->id)
+                ->pluck('payment_date')
+                ->map(fn ($date) => Carbon::parse($date)->toDateString())
+                ->flip();
+
+            $closedDates = DB::table('closed_accounts')
+                ->whereDate('date', '>=', Carbon::parse($member->start_date)->toDateString())
+                ->pluck('date')
+                ->map(fn ($date) => Carbon::parse($date)->toDateString())
+                ->flip();
+
+            $remainingBalance = 0;
+
+            while ($currentDate <= $today) {
+                $scheduleDate = $currentDate->toDateString();
+                $expectedPaymentDate = $currentDate->copy();
+
+                $paymentsOnDate = $regularPayments->filter(function ($payment) use ($scheduleDate) {
+                    return Carbon::parse($payment->payment_date)->toDateString() === $scheduleDate;
+                });
+
+                $paidAmount = (float) $paymentsOnDate->sum('amount');
+                $hasAnyPayment = isset($allPaymentDates[$scheduleDate]);
+                $closedOnDate = isset($closedDates[$scheduleDate]);
+                $penaltyCharged = $closedOnDate && !$hasAnyPayment;
+
+                if ($paidAmount > 0) {
+                    $remaining = $paidAmount - $expectedAmount;
+
+                    if ($remaining > 0) {
+                        $remainingBalance += $remaining;
+                        $displayAmount = $expectedAmount;
+                    } else {
+                        $displayAmount = $paidAmount;
+                        $remainingBalance = 0;
+                    }
+                } else {
+                    if ($remainingBalance > 0) {
+                        $remaining = $remainingBalance - $expectedAmount;
+
+                        if ($remaining >= 0) {
+                            $displayAmount = $expectedAmount;
+                            $remainingBalance = $remaining;
+                        } else {
+                            $displayAmount = $remainingBalance;
+                            $remainingBalance = 0;
+                        }
+                    } else {
+                        $displayAmount = null;
+                    }
+                }
+
+                $schedule[] = [
+                    'date' => $expectedPaymentDate->format('d/m/Y'),
+                    'amount' => $displayAmount,
+                    'is_paid' => $paidAmount > 0 || $displayAmount !== null,
+                    'is_closed' => $closedOnDate,
+                    'penalty_charged' => $penaltyCharged,
+                ];
+
+                match ($member->type) {
+                    'daily' => $currentDate->addDay(),
+                    'weekly' => $currentDate->addWeek(),
+                    'monthly' => $currentDate->addMonth(),
+                    default => $currentDate->addDay(),
+                };
+            }
+
+            if ($remainingBalance > 0) {
+                while ($remainingBalance > 0) {
+                    $expectedPaymentDate = $currentDate->copy();
+                    $remaining = $remainingBalance - $expectedAmount;
+
+                    if ($remaining >= 0) {
+                        $displayAmount = $expectedAmount;
+                        $remainingBalance = $remaining;
+                    } else {
+                        $displayAmount = $remainingBalance;
+                        $remainingBalance = 0;
+                    }
+
+                    $schedule[] = [
+                        'date' => $expectedPaymentDate->format('d/m/Y'),
+                        'amount' => $displayAmount,
+                        'is_paid' => true,
+                        'is_closed' => false,
+                        'penalty_charged' => false,
+                    ];
+
+                    match ($member->type) {
+                        'daily' => $currentDate->addDay(),
+                        'weekly' => $currentDate->addWeek(),
+                        'monthly' => $currentDate->addMonth(),
+                        default => $currentDate->addDay(),
+                    };
+                }
+            }
+        }
+
+        $summary = [
+            'expected_periods' => count($schedule),
+            'paid_periods' => collect($schedule)->where('is_paid', true)->count(),
+            'total_amount' => Payment::where('member_id', $member->id)->where('payment_type', 'regular')->sum('amount'),
+            'balance' => (float) ($collection?->balance ?? 0),
+        ];
+
+        $pdf = Pdf::loadView('payments.member-statement-pdf', compact('member', 'collection', 'schedule', 'summary'));
+        $filename = 'Member_Statement_' . str($member->name)->slug('_') . '_' . now()->format('Ymd_His') . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
     /**
      * Display all members who paid with date filter
      */
-    public function index(Request $request)
-    {
-        $query = Payment::with(['member', 'user', 'collection'])
-            ->where('payment_type', 'regular'); // Only regular payments
+public function index(Request $request)
+{
+    $query = Payment::with(['member', 'user', 'collection'])
+        ->where('payment_type', 'regular');
 
-        // Default to today's date
-        $fromDate = $request->get('from_date', now()->toDateString());
-        $toDate = $request->get('to_date', now()->toDateString());
-        $payType = $request->get('pay_type');
+    // ✅ Single date instead of range
+    $paymentDate = $request->get('payment_date', now()->toDateString());
 
-        // Filter by date range
-        if ($fromDate && $toDate) {
-            $query->whereBetween('payment_date', [$fromDate, $toDate]);
-        }
+    $payType = $request->get('pay_type');
+    $search = $request->get('search');
 
-        // Filter by pay_type
-        if ($payType) {
-            $query->whereHas('member', function ($q) use ($payType) {
-                $q->where('pay_type', $payType);
-            });
-        }
-
-        // Get distinct members who made payments in the period
-        $payments = $query->orderBy('payment_date', 'desc')
-            ->paginate(15);
-
-        // Calculate summary statistics
-        $summaryQuery = Payment::where('payment_type', 'regular')
-            ->whereBetween('payment_date', [$fromDate, $toDate]);
-        
-        if ($payType) {
-            $summaryQuery->whereHas('member', function ($q) use ($payType) {
-                $q->where('pay_type', $payType);
-            });
-        }
-        
-        $summary = [
-            'total_payments' => $summaryQuery->count(),
-            'total_amount' => $summaryQuery->sum('amount'),
-            'total_members' => $summaryQuery->distinct('member_id')->count('member_id'),
-        ];
-
-        $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
-
-        return view('payments.report', compact('payments', 'fromDate', 'toDate', 'summary', 'payType', 'payTypeLabel'));
+    // ✅ Filter by single date
+    if ($paymentDate) {
+        $query->whereDate('payment_date', $paymentDate);
     }
+
+    if ($payType) {
+        $query->whereHas('member', fn($q) => 
+            $q->where('pay_type', $payType)
+        );
+    }
+
+    if ($search) {
+        $query->whereHas('member', fn($q) => 
+            $q->where('name', 'like', "%{$search}%")
+        );
+    }
+
+    $payments = $query->orderBy('payment_date', 'desc')
+        ->paginate(15)
+        ->withQueryString();
+
+    // ✅ Summary (use same single date)
+    $summaryQuery = Payment::where('payment_type', 'regular')
+        ->whereDate('payment_date', $paymentDate);
+
+    if ($payType) {
+        $summaryQuery->whereHas('member', fn($q) => 
+            $q->where('pay_type', $payType)
+        );
+    }
+
+    if ($search) {
+        $summaryQuery->whereHas('member', fn($q) => 
+            $q->where('name', 'like', "%{$search}%")
+        );
+    }
+
+    $summary = [
+        'total_payments' => $summaryQuery->count(),
+        'total_amount' => $summaryQuery->sum('amount'),
+        'total_members' => $summaryQuery->distinct('member_id')->count('member_id'),
+    ];
+
+    $payTypeLabel = $payType 
+        ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') 
+        : 'Wote';
+
+    return view('payments.report', compact(
+        'payments',
+        'paymentDate', // ✅ changed
+        'summary',
+        'payType',
+        'payTypeLabel',
+        'search'
+    ));
+}
 
     /**
      * Download payment report as PDF
      */
-    public function downloadPdf(Request $request)
-    {
-        $fromDate = $request->get('from_date', now()->toDateString());
-        $toDate = $request->get('to_date', now()->toDateString());
-        $payType = $request->get('pay_type');
+   public function downloadPdf(Request $request)
+{
+    $fromDate = $request->get('from_date', now()->toDateString());
+    $toDate = $request->get('to_date', now()->toDateString());
+    $payType = $request->get('pay_type');
+    $search = $request->get('search'); // NEW: search filter for PDF
 
-        $query = Payment::with(['member', 'user', 'collection'])
-            ->where('payment_type', 'regular');
+    $query = Payment::with(['member', 'user', 'collection'])
+        ->where('payment_type', 'regular');
 
-        // Filter by date range
-        if ($fromDate && $toDate) {
-            $query->whereBetween('payment_date', [$fromDate, $toDate]);
-        }
-
-        // Filter by pay_type
-        if ($payType) {
-            $query->whereHas('member', function ($q) use ($payType) {
-                $q->where('pay_type', $payType);
-            });
-        }
-
-        $payments = $query->orderBy('payment_date', 'desc')->get();
-
-        // Calculate summary statistics
-        $summary = [
-            'total_payments' => $payments->count(),
-            'total_amount' => $payments->sum('amount'),
-            'total_members' => $payments->pluck('member_id')->unique()->count(),
-        ];
-
-        $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
-
-        $pdf = Pdf::loadView('payments.pdf', compact('payments', 'fromDate', 'toDate', 'summary', 'payType', 'payTypeLabel'));
-        
-        $filename = 'Ripoti_Ya_Malipo_' . $fromDate . '_' . $toDate . ($payType ? '_' . $payType : '') . '.pdf';
-        
-        return $pdf->download($filename);
+    if ($fromDate && $toDate) {
+        $query->whereBetween('payment_date', [$fromDate, $toDate]);
     }
+
+    if ($payType) {
+        $query->whereHas('member', fn($q) => $q->where('pay_type', $payType));
+    }
+
+    if ($search) {
+        $query->whereHas('member', fn($q) => $q->where('name', 'like', "%{$search}%"));
+    }
+
+    $payments = $query->orderBy('payment_date', 'desc')->get();
+
+    // Summary
+    $summary = [
+        'total_payments' => $payments->count(),
+        'total_amount' => $payments->sum('amount'),
+        'total_members' => $payments->pluck('member_id')->unique()->count(),
+    ];
+
+    $payTypeLabel = $payType ? ($payType === 'mchango_mdogo' ? 'Mchango Mdogo' : 'Mchango Mkubwa') : 'Wote';
+
+    $pdf = Pdf::loadView('payments.pdf', compact('payments', 'fromDate', 'toDate', 'summary', 'payType', 'payTypeLabel', 'search'));
+
+    $filename = 'Ripoti_Ya_Malipo_' . $fromDate . '_' . $toDate . ($payType ? '_' . $payType : '') . '.pdf';
+
+    return $pdf->download($filename);
+}
 
     /**
      * Delete a payment record
