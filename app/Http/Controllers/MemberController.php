@@ -21,6 +21,10 @@ public function index(Request $request)
     $search = $request->get('search');
     $payType = $request->get('pay_type', $request->route('pay_type'));
     $paidTodayFilter = $request->get('paid_today');
+    $perPage = (int) $request->get('per_page', 10);
+    if (!in_array($perPage, [10, 50, 100], true)) {
+        $perPage = 10;
+    }
 
     if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
         $payType = null;
@@ -59,7 +63,7 @@ public function index(Request $request)
         })
 
         ->orderBy('created_at', 'desc')
-        ->paginate(10)
+        ->paginate($perPage)
         ->withQueryString(); // ✅ keep filters when paginating
 
     // ✅ Dashboard Stats
@@ -324,10 +328,71 @@ public function downloadPdf(Request $request)
                 $collection->save();
             });
             
-            return redirect()->route('members.index')->with('success', 'Faini imesamehewa kikamilifu.');
+            return $this->redirectToMembersBySession()->with('success', 'Faini imesamehewa kikamilifu.');
         }
         
-        return redirect()->route('members.index')->with('info', 'Hakuna faini ya kusamehe.');
+        return $this->redirectToMembersBySession()->with('info', 'Hakuna faini ya kusamehe.');
+    }
+
+    public function bulkForgivePenalty(Request $request)
+    {
+        if (!auth()->user()->isAdmin()) {
+            return $this->redirectToMembersBySession()
+                ->with('error', 'Hairuhusiwi kusamehe faini kwa wingi.');
+        }
+
+        $validated = $request->validate([
+            'member_ids' => ['required', 'array', 'min:1'],
+            'member_ids.*' => ['integer', 'exists:members,id'],
+        ]);
+
+        /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Member> $members */
+        $members = Member::query()->with('collections')
+            ->whereIn('id', $validated['member_ids'])
+            ->get();
+
+        $forgivenCount = 0;
+
+        DB::transaction(function () use ($members, &$forgivenCount) {
+            /** @var \App\Models\Member $member */
+            foreach ($members as $member) {
+                $updated = Collection::where('member_id', $member->id)
+                    ->where('penalty_balance', '>', 0)
+                    ->update([
+                        'total_penalty' => 0,
+                        'penalty_paid' => 0,
+                        'penalty_balance' => 0,
+                        'last_payment_date' => now(),
+                    ]);
+
+                if ($updated > 0) {
+                    $forgivenCount++;
+                }
+            }
+        });
+
+        if ($forgivenCount === 0) {
+            return $this->redirectToMembersBySession()
+                ->with('info', 'Hakuna faini ya kusamehe kwa waliochaguliwa.');
+        }
+
+        return $this->redirectToMembersBySession()
+            ->with('success', "Faini zimesamehewa kwa wanachama {$forgivenCount}.");
+    }
+
+    private function redirectToMembersBySession()
+    {
+        $payType = session('pay_type');
+
+        if ($payType === 'mchango_mdogo') {
+            return redirect()->route('members.index.mdogo');
+        }
+
+        if ($payType === 'mchango_mkubwa') {
+            return redirect()->route('members.index.mkubwa');
+        }
+
+        return redirect()->route('members.index');
     }
 
 

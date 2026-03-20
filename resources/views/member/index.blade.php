@@ -84,6 +84,29 @@
 
             <div class="w-full p-4">
                 <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+                    <div class="w-full md:w-auto">
+                        <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
+                            <label for="per_page" class="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">Orodha kwa ukurasa</label>
+                            <select
+                                id="per_page"
+                                name="per_page"
+                                onchange="this.form.submit()"
+                                class="w-full md:w-28 p-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg
+                                       focus:ring-cyan-500 focus:border-cyan-500
+                                       dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            >
+                                <option value="10" {{ (int) request('per_page', 10) === 10 ? 'selected' : '' }}>10</option>
+                                <option value="50" {{ (int) request('per_page', 10) === 50 ? 'selected' : '' }}>50</option>
+                                <option value="100" {{ (int) request('per_page', 10) === 100 ? 'selected' : '' }}>100</option>
+                            </select>
+                            @if(request('search'))
+                                <input type="hidden" name="search" value="{{ request('search') }}">
+                            @endif
+                            @if($payType ?? request('pay_type'))
+                                <input type="hidden" name="pay_type" value="{{ $payType ?? request('pay_type') }}">
+                            @endif
+                        </form>
+                    </div>
                  
                     <div class="w-full md:w-1/3">
                         <input
@@ -97,10 +120,31 @@
                     </div>
                 </div>
      
+                @if(auth()->user()->isAdmin())
+                <form method="POST" action="{{ route('members.forgive-penalty.bulk') }}" id="bulk-penalty-form">
+                    @csrf
+                    <div class="mb-3 flex items-center justify-between">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Chagua wenye faini kisha bofya samehe kwa pamoja</div>
+                        <button
+                            type="submit"
+                            id="bulk-forgive-btn"
+                            disabled
+                            class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Samehe Faini (Selected)
+                        </button>
+                    </div>
+                @endif
+
                 <div class="relative overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
                     <table id="members-table" class="w-full text-sm text-left text-gray-700 dark:text-gray-300">
                         <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-800 dark:text-gray-200">
                             <tr>
+                                @if(auth()->user()->isAdmin())
+                                    <th scope="col" class="px-4 py-3">
+                                        <input type="checkbox" id="select-all-penalty" class="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500">
+                                    </th>
+                                @endif
                                 <th scope="col" class="px-4 py-3">Picha</th>
                                 <th scope="col" class="px-4 py-3">Jina</th>
                                 <th scope="col" class="px-4 py-3">Simu</th>
@@ -117,9 +161,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php
-                                $colspan = auth()->user()->isAdmin() ? 12 : 11;
-                            @endphp
+                            @php $colspan = auth()->user()->isAdmin() ? 11 : 10; @endphp
                             @if($members->isEmpty())
                                 <tr class="table-empty-row">
                                     <td colspan="{{ $colspan }}" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
@@ -147,6 +189,20 @@
     $todayAmount = $member->payments->sum('amount');
 @endphp
                                 <tr class="bg-white border-t dark:bg-gray-900 dark:border-gray-700">
+                                    @if(auth()->user()->isAdmin())
+                                        <td class="px-4 py-3">
+                                            @if($penaltyBalance > 0)
+                                                <input
+                                                    type="checkbox"
+                                                    name="member_ids[]"
+                                                    value="{{ $member->id }}"
+                                                    class="penalty-checkbox rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                                                >
+                                            @else
+                                                <span class="text-gray-300">—</span>
+                                            @endif
+                                        </td>
+                                    @endif
                                     <td class="px-4 py-3">
                                         @if($member->pay_type == 'mchango_mdogo')
                                             <img class="w-10 h-10 rounded-full" src="{{ asset('images/member.png') }}" alt="Member - Mchango Mdogo">
@@ -160,12 +216,16 @@
     {{ $member->name }}
 
     @if($paidToday)
-        <span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
-            Amelipa {{ number_format($todayAmount, 0) }} Leo
+        <span title="Amelipa leo ({{ number_format($todayAmount, 0) }} TSh)" class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.2 7.2a1 1 0 01-1.415 0l-3.2-3.2a1 1 0 111.414-1.42l2.493 2.494 6.493-6.494a1 1 0 011.415 0z" clip-rule="evenodd" />
+            </svg>
         </span>
     @else
-        <span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
-            Hajalipa Leo
+        <span title="Hajalipa leo" class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-10.293a1 1 0 00-1.414-1.414L10 8.586 7.707 6.293a1 1 0 00-1.414 1.414L8.586 10l-2.293 2.293a1 1 0 101.414 1.414L10 11.414l2.293 2.293a1 1 0 001.414-1.414L11.414 10l2.293-2.293z" clip-rule="evenodd" />
+            </svg>
         </span>
     @endif
 </td>
@@ -272,6 +332,9 @@
                         </tbody>
                     </table>
                 </div>
+                @if(auth()->user()->isAdmin())
+                </form>
+                @endif
             </div>
 
 <!-- Edit Modals for each member -->
@@ -436,7 +499,7 @@
 @endforeach
 
             <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4" aria-label="Table navigation">
-                <span class="text-sm font-normal text-gray-500 dark:text-gray-400">If it still doesn’t work, paste the exact error/output from the server terminal.
+                <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
                 
                 
                     Inaonyesha
@@ -446,7 +509,7 @@
                 </span>
                 
                 <div class="inline-flex items-stretch -space-x-px">
-                    {{ $members->appends(['search' => request('search'), 'pay_type' => $payType ?? request('pay_type')])->links() }}
+                    {{ $members->appends(['search' => request('search'), 'pay_type' => $payType ?? request('pay_type'), 'per_page' => request('per_page', 10)])->links() }}
                 </div>
             </nav>
         </div>
@@ -717,6 +780,38 @@ document.addEventListener('DOMContentLoaded', function () {
         rows.forEach(row => {
             const text = row.textContent.toLowerCase();
             row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll = document.getElementById('select-all-penalty');
+    const checkboxes = Array.from(document.querySelectorAll('.penalty-checkbox'));
+    const bulkButton = document.getElementById('bulk-forgive-btn');
+
+    if (!selectAll || !bulkButton || checkboxes.length === 0) {
+        return;
+    }
+
+    const syncButtonState = () => {
+        const checkedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
+        bulkButton.disabled = checkedCount === 0;
+    };
+
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach((checkbox) => {
+            checkbox.checked = selectAll.checked;
+        });
+        syncButtonState();
+    });
+
+    checkboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', function () {
+            const allChecked = checkboxes.every((item) => item.checked);
+            selectAll.checked = allChecked;
+            syncButtonState();
         });
     });
 });

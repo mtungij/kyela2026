@@ -20,7 +20,6 @@
     </div>
 
    
-
     @if(session('success'))
         <div class="p-3 rounded-lg bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
              {{ session('success') }}
