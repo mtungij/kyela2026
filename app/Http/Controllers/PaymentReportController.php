@@ -264,12 +264,6 @@ public function index(Request $request)
      */
     public function deletePayment($paymentId)
     {
-        // Only admin can delete payments
-        if (!auth()->user()->isAdmin()) {
-            return redirect()->route('payments.report')
-                ->with('error', 'Hairuhusiwi kufuta malipo. Harufu za admin kwa kufanya hatua hii.');
-        }
-
         $payment = Payment::findOrFail($paymentId);
         $collectionId = $payment->collection_id;
 

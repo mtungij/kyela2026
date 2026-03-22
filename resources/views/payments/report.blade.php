@@ -19,6 +19,17 @@
         </div>
     </div>
     @endif
+
+    @if(session('error'))
+    <div class="bg-red-100 border border-red-200 text-sm text-red-800 rounded-lg p-4 dark:bg-red-800/10 dark:border-red-900 dark:text-red-500 mb-4" role="alert">
+        <div class="flex">
+            <div class="ms-3">
+                <h3 class="text-gray-800 font-semibold dark:text-white">Hitilafu</h3>
+                <p class="mt-2 text-sm text-gray-700 dark:text-gray-400">{{ session('error') }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
     
     <!-- Header -->
     <div class="bg-gray-100 dark:bg-gray-900 mb-6">
@@ -81,7 +92,10 @@
                     >
                         Chafya
                     </button>
-                    
+                    <a 
+                        href="{{ route('payments.download-pdf', request()->query()) }}"
+                        class="inline-flex items-center gap-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+                    >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2m0 0v-8m0 8l-6-4m6 4l6-4"></path>
                         </svg>
@@ -125,7 +139,7 @@
     >
 </div>
        <div class="overflow-x-auto rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-    <table class="w-full text-sm text-left text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-7
+    <table class="w-full text-sm text-left text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
                 <thead class="bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-200 font-semibold sticky top-0">
                     <tr>
                     <th class="px-6 py-3 border-b dark:border-gray-700">S/No</th>
@@ -175,17 +189,13 @@
 </td>
                           
                             <td class="px-6 py-3 text-center">
-                                @if(auth()->user()->isAdmin())
-                                <form action="{{ route('payments.delete', $payment->id) }}" method="POST" class="inline" onsubmit="return confirm('Je, una hakika kuwa ungetaka kufuta malipo haya? Hatua hii haiwezi kurudi.');">
+                                <form action="{{ route('payments.delete', $payment->id) }}" method="POST" class="inline delete-payment-form" data-member-name="{{ $payment->member->name }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded transition-colors">
+                                    <button type="button" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded transition-colors open-delete-modal">
                                         Futa
                                     </button>
                                 </form>
-                                @else
-                                <span class="text-gray-400 text-xs">N/A</span>
-                                @endif
                             </td>
                         </tr>
                     @empty
@@ -206,18 +216,122 @@
     </div>
 </div>
 
-<script>
-document.getElementById('searchInput').addEventListener('keyup', function () {
-    let filter = this.value.toLowerCase();
-    let rows = document.querySelectorAll('tbody tr');
+<div id="deletePaymentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="deletePaymentModalTitle">
+    <div class="w-full max-w-md rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 id="deletePaymentModalTitle" class="text-lg font-semibold text-gray-900 dark:text-white">Thibitisha Kufuta Malipo</h3>
+        </div>
+        <div class="px-6 py-5">
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+                Una uhakika unataka kufuta malipo ya
+                <span id="deleteMemberName" class="font-semibold text-gray-900 dark:text-white"></span>?
+            </p>
+         
+        </div>
+        <div class="px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
+            <button type="button" id="cancelDeletePayment" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium rounded-lg dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200">
+                Ghairi
+            </button>
+            <button type="button" id="confirmDeletePayment" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg">
+                Ndiyo, Futa
+            </button>
+        </div>
+    </div>
+</div>
 
-    rows.forEach(row => {
-        let nameCell = row.querySelector('td:first-child');
-        if (nameCell) {
-            let text = nameCell.textContent.toLowerCase();
-            row.style.display = text.includes(filter) ? '' : 'none';
+<script>
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+    searchInput.addEventListener('keyup', function () {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+            let nameCell = row.querySelector('td:first-child');
+            if (nameCell) {
+                let text = nameCell.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            }
+        });
+    });
+}
+
+const deletePaymentModal = document.getElementById('deletePaymentModal');
+const deleteMemberName = document.getElementById('deleteMemberName');
+const confirmDeletePayment = document.getElementById('confirmDeletePayment');
+const cancelDeletePayment = document.getElementById('cancelDeletePayment');
+const openDeleteButtons = document.querySelectorAll('.open-delete-modal');
+let selectedDeleteForm = null;
+let lastTriggerButton = null;
+
+function closeDeleteModal() {
+    if (deletePaymentModal) {
+        deletePaymentModal.classList.add('hidden');
+        deletePaymentModal.classList.remove('flex');
+    }
+    selectedDeleteForm = null;
+
+    if (lastTriggerButton) {
+        lastTriggerButton.focus();
+        lastTriggerButton = null;
+    }
+}
+
+openDeleteButtons.forEach(button => {
+    button.addEventListener('click', function () {
+        const form = this.closest('.delete-payment-form');
+        if (!form || !deletePaymentModal || !deleteMemberName) {
+            return;
+        }
+
+        lastTriggerButton = this;
+        selectedDeleteForm = form;
+        deleteMemberName.textContent = form.dataset.memberName || 'mwanachama huyu';
+        deletePaymentModal.classList.remove('hidden');
+        deletePaymentModal.classList.add('flex');
+
+        if (cancelDeletePayment) {
+            cancelDeletePayment.focus();
         }
     });
+});
+
+if (cancelDeletePayment) {
+    cancelDeletePayment.addEventListener('click', closeDeleteModal);
+}
+
+if (confirmDeletePayment) {
+    confirmDeletePayment.addEventListener('click', function () {
+        if (selectedDeleteForm) {
+            selectedDeleteForm.submit();
+        }
+    });
+}
+
+if (deletePaymentModal) {
+    deletePaymentModal.addEventListener('click', function (event) {
+        if (event.target === deletePaymentModal) {
+            closeDeleteModal();
+        }
+    });
+}
+
+document.addEventListener('keydown', function (event) {
+    if (!deletePaymentModal || deletePaymentModal.classList.contains('hidden')) {
+        return;
+    }
+
+    if (event.key === 'Escape') {
+        closeDeleteModal();
+    }
+
+    if (event.key === 'Enter') {
+        const isTextarea = document.activeElement && document.activeElement.tagName === 'TEXTAREA';
+        if (!isTextarea && selectedDeleteForm) {
+            event.preventDefault();
+            selectedDeleteForm.submit();
+        }
+    }
 });
 </script>
 
