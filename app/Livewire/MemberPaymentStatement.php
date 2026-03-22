@@ -94,17 +94,10 @@ class MemberPaymentStatement extends Component
         $today = now()->endOfDay();
         $expectedAmount = $this->member->amount;
 
-        // Get all regular payments for this member
-        $regularPayments = Payment::with('user')
-            ->where('member_id', $this->member->id)
+        // Use total accumulated paid amount and fill from start_date forward
+        $remainingPaid = (float) Payment::where('member_id', $this->member->id)
             ->where('payment_type', 'regular')
-            ->orderBy('payment_date')
-            ->get();
-
-        $allPaymentDates = Payment::where('member_id', $this->member->id)
-            ->pluck('payment_date')
-            ->map(fn ($date) => Carbon::parse($date)->toDateString())
-            ->flip();
+            ->sum('amount');
 
         $closedDates = DB::table('closed_accounts')
             ->whereDate('date', '>=', Carbon::parse($this->member->start_date)->toDateString())
@@ -112,67 +105,35 @@ class MemberPaymentStatement extends Component
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
             ->flip();
 
-        $remainingBalance = 0; // Track overpayments
-
         // First pass: build schedule from start_date to today
         while ($currentDate <= $today) {
             $scheduleDate = $currentDate->toDateString();
-            $expectedPaymentDate = $currentDate->copy();
-
-            // Find payments for this schedule date
-            $paymentsOnDate = $regularPayments->filter(function ($p) use ($scheduleDate) {
-                $payDate = Carbon::parse($p->payment_date)->toDateString();
-                return $payDate === $scheduleDate;
-            });
-
-            $paidAmount = $paymentsOnDate->sum('amount');
-            $hasRegularPayment = $paidAmount > 0;
-            $hasAnyPayment = isset($allPaymentDates[$scheduleDate]);
             $closedOnDate = isset($closedDates[$scheduleDate]);
-            $penaltyCharged = $closedOnDate && !$hasAnyPayment;
 
-            // Calculate amount for this period
-            if ($paidAmount > 0) {
-                // Payment was made
-                $remaining = $paidAmount - $expectedAmount;
-
-                if ($remaining > 0) {
-                    // Overpayment - carry to next period
-                    $remainingBalance += $remaining;
-                    $displayAmount = $expectedAmount;
-                } else {
-                    $displayAmount = $paidAmount;
-                    $remainingBalance = 0;
-                }
+            if ($remainingPaid >= $expectedAmount) {
+                $displayAmount = $expectedAmount;
+                $remainingPaid -= $expectedAmount;
+                $isPaid = true;
+            } elseif ($remainingPaid > 0) {
+                $displayAmount = $remainingPaid;
+                $remainingPaid = 0;
+                $isPaid = false; // partial — not fully covered
             } else {
-                // No payment on this date
-                if ($remainingBalance > 0) {
-                    // Use overpaid amount from previous period
-                    $remaining = $remainingBalance - $expectedAmount;
-                    if ($remaining >= 0) {
-                        $displayAmount = $expectedAmount;
-                        $remainingBalance = $remaining;
-                    } else {
-                        $displayAmount = $remainingBalance;
-                        $remainingBalance = 0;
-                    }
-                } else {
-                    $displayAmount = null; // Not paid
-                }
+                $displayAmount = null;
+                $isPaid = false;
             }
 
             $schedule[] = [
-                'date' => $expectedPaymentDate->format('d/m/Y'),
-                'date_string' => $expectedPaymentDate->toDateString(),
+                'date' => $currentDate->format('d/m/Y'),
+                'date_string' => $scheduleDate,
                 'amount' => $displayAmount,
-                'is_paid' => $paidAmount > 0 || ($displayAmount !== null),
-                'actual_payment' => $paidAmount > 0 ? $paidAmount : null,
-                'user' => $paymentsOnDate->first()?->user?->name ?? null,
+                'is_paid' => $isPaid,
+                'actual_payment' => null,
+                'user' => null,
                 'is_closed' => $closedOnDate,
-                'penalty_charged' => $penaltyCharged,
+                'penalty_charged' => $closedOnDate && !$isPaid,
             ];
 
-            // Move to next period based on type
             match ($this->member->type) {
                 'daily' => $currentDate->addDay(),
                 'weekly' => $currentDate->addWeek(),
@@ -182,39 +143,34 @@ class MemberPaymentStatement extends Component
         }
 
         // Second pass: extend schedule for future periods if overpayment exists
-        if ($remainingBalance > 0) {
-            while ($remainingBalance > 0) {
-                $scheduleDate = $currentDate->toDateString();
-                $expectedPaymentDate = $currentDate->copy();
+        while ($remainingPaid > 0) {
+            $scheduleDate = $currentDate->toDateString();
 
-                $remaining = $remainingBalance - $expectedAmount;
-                if ($remaining >= 0) {
-                    $displayAmount = $expectedAmount;
-                    $remainingBalance = $remaining;
-                } else {
-                    $displayAmount = $remainingBalance;
-                    $remainingBalance = 0;
-                }
-
-                $schedule[] = [
-                    'date' => $expectedPaymentDate->format('d/m/Y'),
-                    'date_string' => $expectedPaymentDate->toDateString(),
-                    'amount' => $displayAmount,
-                    'is_paid' => true, // Mark as paid from overpayment
-                    'actual_payment' => null,
-                    'user' => 'Overpayment',
-                    'is_closed' => false,
-                    'penalty_charged' => false,
-                ];
-
-                // Move to next period based on type
-                match ($this->member->type) {
-                    'daily' => $currentDate->addDay(),
-                    'weekly' => $currentDate->addWeek(),
-                    'monthly' => $currentDate->addMonth(),
-                    default => $currentDate->addDay(),
-                };
+            if ($remainingPaid >= $expectedAmount) {
+                $displayAmount = $expectedAmount;
+                $remainingPaid -= $expectedAmount;
+            } else {
+                $displayAmount = $remainingPaid;
+                $remainingPaid = 0;
             }
+
+            $schedule[] = [
+                'date' => $currentDate->format('d/m/Y'),
+                'date_string' => $scheduleDate,
+                'amount' => $displayAmount,
+                'is_paid' => true,
+                'actual_payment' => null,
+                'user' => null,
+                'is_closed' => false,
+                'penalty_charged' => false,
+            ];
+
+            match ($this->member->type) {
+                'daily' => $currentDate->addDay(),
+                'weekly' => $currentDate->addWeek(),
+                'monthly' => $currentDate->addMonth(),
+                default => $currentDate->addDay(),
+            };
         }
 
         return $schedule;
