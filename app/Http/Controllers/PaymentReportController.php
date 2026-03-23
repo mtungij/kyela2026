@@ -25,18 +25,32 @@ class PaymentReportController extends Controller
 
         if ($member->start_date && $member->type && $member->amount) {
             $currentDate = Carbon::parse($member->start_date)->startOfDay();
-            $today = now()->endOfDay();
+            // Use end_date if set, otherwise fall back to today
+            $endLimit = $member->end_date
+                ? Carbon::parse($member->end_date)->endOfDay()
+                : now()->endOfDay();
             $expectedAmount = (float) $member->amount;
 
-            $regularPayments = Payment::where('member_id', $member->id)
+            // Use total accumulated paid amount and fill from start_date forward
+            $remainingPaid = (float) Payment::where('member_id', $member->id)
                 ->where('payment_type', 'regular')
-                ->orderBy('payment_date')
-                ->get();
+                ->sum('amount');
 
-            $allPaymentDates = Payment::where('member_id', $member->id)
-                ->pluck('payment_date')
-                ->map(fn ($date) => Carbon::parse($date)->toDateString())
-                ->flip();
+            $paymentsUpToEnd = Payment::where('member_id', $member->id)
+                ->where('payment_type', 'regular')
+                ->whereDate('payment_date', '<=', $endLimit->toDateString())
+                ->get(['payment_date', 'amount'])
+                ->map(function ($payment) {
+                    return [
+                        'date' => Carbon::parse($payment->payment_date)->toDateString(),
+                        'amount' => (float) $payment->amount,
+                    ];
+                })
+                ->sortBy('date')
+                ->values();
+
+            $paymentPointer = 0;
+            $runningPaid = 0.0;
 
             $closedDates = DB::table('closed_accounts')
                 ->whereDate('date', '>=', Carbon::parse($member->start_date)->toDateString())
@@ -44,53 +58,42 @@ class PaymentReportController extends Controller
                 ->map(fn ($date) => Carbon::parse($date)->toDateString())
                 ->flip();
 
-            $remainingBalance = 0;
-
-            while ($currentDate <= $today) {
+            while ($currentDate <= $endLimit) {
                 $scheduleDate = $currentDate->toDateString();
-                $expectedPaymentDate = $currentDate->copy();
-
-                $paymentsOnDate = $regularPayments->filter(function ($payment) use ($scheduleDate) {
-                    return Carbon::parse($payment->payment_date)->toDateString() === $scheduleDate;
-                });
-
-                $paidAmount = (float) $paymentsOnDate->sum('amount');
-                $hasAnyPayment = isset($allPaymentDates[$scheduleDate]);
                 $closedOnDate = isset($closedDates[$scheduleDate]);
-                $penaltyCharged = $closedOnDate && !$hasAnyPayment;
 
-                if ($paidAmount > 0) {
-                    $remaining = $paidAmount - $expectedAmount;
+                while (
+                    $paymentPointer < $paymentsUpToEnd->count()
+                    && $paymentsUpToEnd[$paymentPointer]['date'] <= $scheduleDate
+                ) {
+                    $runningPaid += $paymentsUpToEnd[$paymentPointer]['amount'];
+                    $paymentPointer++;
+                }
 
-                    if ($remaining > 0) {
-                        $remainingBalance += $remaining;
-                        $displayAmount = $expectedAmount;
-                    } else {
-                        $displayAmount = $paidAmount;
-                        $remainingBalance = 0;
-                    }
+                $expectedDaysUpToDate = Carbon::parse($member->start_date)->startOfDay()
+                    ->diffInDays(Carbon::parse($scheduleDate)->startOfDay()) + 1;
+                $expectedAmountUpToDate = $expectedDaysUpToDate * (float) $member->amount;
+                $isCoveredAtDate = $runningPaid >= $expectedAmountUpToDate;
+
+                if ($remainingPaid >= $expectedAmount) {
+                    $displayAmount = $expectedAmount;
+                    $remainingPaid -= $expectedAmount;
+                    $isPaid = true;
+                } elseif ($remainingPaid > 0) {
+                    $displayAmount = $remainingPaid;
+                    $remainingPaid = 0;
+                    $isPaid = false;
                 } else {
-                    if ($remainingBalance > 0) {
-                        $remaining = $remainingBalance - $expectedAmount;
-
-                        if ($remaining >= 0) {
-                            $displayAmount = $expectedAmount;
-                            $remainingBalance = $remaining;
-                        } else {
-                            $displayAmount = $remainingBalance;
-                            $remainingBalance = 0;
-                        }
-                    } else {
-                        $displayAmount = null;
-                    }
+                    $displayAmount = null;
+                    $isPaid = false;
                 }
 
                 $schedule[] = [
-                    'date' => $expectedPaymentDate->format('d/m/Y'),
+                    'date' => $currentDate->format('d/m/Y'),
                     'amount' => $displayAmount,
-                    'is_paid' => $paidAmount > 0 || $displayAmount !== null,
+                    'is_paid' => $isPaid,
                     'is_closed' => $closedOnDate,
-                    'penalty_charged' => $penaltyCharged,
+                    'penalty_charged' => $closedOnDate && !$isCoveredAtDate,
                 ];
 
                 match ($member->type) {
@@ -101,21 +104,19 @@ class PaymentReportController extends Controller
                 };
             }
 
-            if ($remainingBalance > 0) {
-                while ($remainingBalance > 0) {
-                    $expectedPaymentDate = $currentDate->copy();
-                    $remaining = $remainingBalance - $expectedAmount;
-
-                    if ($remaining >= 0) {
+            // Extend for overpayment only when no end_date is set
+            if (!$member->end_date) {
+                while ($remainingPaid > 0) {
+                    if ($remainingPaid >= $expectedAmount) {
                         $displayAmount = $expectedAmount;
-                        $remainingBalance = $remaining;
+                        $remainingPaid -= $expectedAmount;
                     } else {
-                        $displayAmount = $remainingBalance;
-                        $remainingBalance = 0;
+                        $displayAmount = $remainingPaid;
+                        $remainingPaid = 0;
                     }
 
                     $schedule[] = [
-                        'date' => $expectedPaymentDate->format('d/m/Y'),
+                        'date' => $currentDate->format('d/m/Y'),
                         'amount' => $displayAmount,
                         'is_paid' => true,
                         'is_closed' => false,

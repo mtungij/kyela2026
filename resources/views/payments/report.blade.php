@@ -126,18 +126,24 @@
             <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $summary['total_members'] }}</div>
         </div>
     </div>
-
+ <div class="mb-4 mt-4 md:w-1/3 relative z-50">
+        <x-ui.select
+            id="searchInput"
+            placeholder="Tafuta jina la mwanachama..."
+            icon="user"
+            searchable
+            no-results-text=""
+            class="w-full"
+        >
+            @foreach($payments->pluck('member.name')->filter()->unique()->sort()->values() as $memberName)
+                <option value="{{ $memberName }}">{{ $memberName }}</option>
+            @endforeach
+        </x-ui.select>
+    </div>
     <!-- Payments Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden relative z-0">
 
-    <div class="mb-4">
-    <input 
-        type="text" 
-        id="searchInput"
-        placeholder="Tafuta jina la mwanachama..."
-        class="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 dark:bg-gray-700 dark:text-white"
-    >
-</div>
+   
        <div class="overflow-x-auto rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
     <table class="w-full text-sm text-left text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
                 <thead class="bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-200 font-semibold sticky top-0">
@@ -156,7 +162,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                     @forelse($payments as $index => $payment)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <tr class="payment-row hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                             <td class="px-6 py-3 font-medium text-gray-900 dark:text-white">
                                 {{ $index + 1 }}
                             </td>
@@ -205,6 +211,11 @@
                             </td>
                         </tr>
                     @endforelse
+                    <tr id="tableNoResultsRow" class="hidden">
+                        <td colspan="7" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                            Hakuna matokeo
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -241,19 +252,33 @@
 
 <script>
 const searchInput = document.getElementById('searchInput');
+const tableNoResultsRow = document.getElementById('tableNoResultsRow');
 if (searchInput) {
-    searchInput.addEventListener('keyup', function () {
+    const applyFilter = function () {
         let filter = this.value.toLowerCase();
-        let rows = document.querySelectorAll('tbody tr');
+        let rows = document.querySelectorAll('tbody tr.payment-row');
+        let visibleCount = 0;
 
         rows.forEach(row => {
-            let nameCell = row.querySelector('td:first-child');
+            let nameCell = row.querySelector('td:nth-child(2)');
             if (nameCell) {
                 let text = nameCell.textContent.toLowerCase();
-                row.style.display = text.includes(filter) ? '' : 'none';
+                const isMatch = text.includes(filter);
+                row.style.display = isMatch ? '' : 'none';
+                if (isMatch) {
+                    visibleCount++;
+                }
             }
         });
-    });
+
+        if (tableNoResultsRow) {
+            tableNoResultsRow.classList.toggle('hidden', visibleCount > 0);
+        }
+    };
+
+    searchInput.addEventListener('keyup', applyFilter);
+    searchInput.addEventListener('input', applyFilter);
+    searchInput.addEventListener('change', applyFilter);
 }
 
 const deletePaymentModal = document.getElementById('deletePaymentModal');

@@ -10,7 +10,6 @@ use Livewire\Component;
 
 class MemberStatementReport extends Component
 {
-    public string $search = '';
     public ?int $selectedMemberId = null;
 
     public function mount(): void
@@ -31,28 +30,15 @@ class MemberStatementReport extends Component
         return Member::query()->when($payType, fn ($q) => $q->where('pay_type', $payType));
     }
 
-    public function selectMember(int $memberId): void
+    public function getMemberOptionsProperty()
     {
-        $this->selectedMemberId = $memberId;
-        $this->search = '';
-    }
-
-    public function getSearchResultsProperty()
-    {
-        if (mb_strlen(trim($this->search)) < 2) {
-            return collect();
-        }
-
-        $term = trim($this->search);
-
         return $this->membersQuery()
-            ->where(function ($q) use ($term) {
-                $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('phone', 'like', "%{$term}%");
-            })
             ->orderBy('name')
-            ->limit(50)
-            ->get(['id', 'name', 'phone']);
+            ->get(['id', 'name', 'phone'])
+            ->map(fn ($member) => [
+                'value' => $member->id,
+                'label' => trim($member->name . ' - ' . ($member->phone ?? 'No phone')),
+            ]);
     }
 
     public function getSelectedMemberProperty(): ?Member
@@ -64,33 +50,36 @@ class MemberStatementReport extends Component
         return $this->membersQuery()->find($this->selectedMemberId);
     }
 
-    public function getCollectionPenaltyStatusProperty(): ?array
-    {
-        $member = $this->selectedMember;
-        if (!$member) {
-            return null;
-        }
+   public function getCollectionPenaltyStatusProperty(): ?array
+{
+    $member = $this->selectedMember;
+    if (!$member) return null;
 
-        $collection = $member->collections()->orderByDesc('id')->first();
-        if (!$collection || !$collection->last_payment_date) {
-            return null;
-        }
+    $collection = $member->collections()->orderByDesc('id')->first();
+    if (!$collection || !$collection->last_payment_date) return null;
 
-        $collectionDate = Carbon::parse($collection->last_payment_date)->toDateString();
-        $closed = DB::table('closed_accounts')->whereDate('date', $collectionDate)->exists();
-        $hasPayment = $member->payments()->whereDate('payment_date', $collectionDate)->exists();
+    $date = Carbon::parse($collection->last_payment_date)->toDateString();
 
-        return [
-            'date'    => Carbon::parse($collectionDate)->format('d/m/Y'),
-            'charged' => $closed && !$hasPayment,
-            'closed'  => $closed,
-        ];
-    }
+    $closed = DB::table('closed_accounts')
+        ->whereDate('date', $date)
+        ->exists();
 
+    // Check if any payment was made **on that date**
+    $paidOnDate = $member->payments()
+        ->whereDate('payment_date', $date)
+        ->sum('amount');
+
+    return [
+        'date'    => Carbon::parse($date)->format('d/m/Y'),
+        'closed'  => $closed,
+        'paid'    => $paidOnDate > 0,
+        'charged' => $closed && $paidOnDate <= 0, // Penalty only if closed AND not paid on that date
+    ];
+}
     public function render()
     {
         return view('livewire.member-statement-report', [
-            'searchResults'             => $this->searchResults,
+            'memberOptions'             => $this->memberOptions,
             'selectedMember'            => $this->selectedMember,
             'collectionPenaltyStatus'   => $this->collectionPenaltyStatus,
         ]);

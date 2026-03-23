@@ -67,7 +67,7 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $row['date'] }}</td>
-                    <td class="right">{{ $row['amount'] !== null ? number_format((float) $row['amount'], 0) : '-' }}</td>
+                    <td class="right">{{ number_format((float) ($row['amount'] ?? $member->amount), 0) }}</td>
                     <td class="center">{{ $row['is_paid'] ? 'Imelipwa' : 'Haijalipwa' }}</td>
                     <td class="center">
                         @if($row['is_closed'])

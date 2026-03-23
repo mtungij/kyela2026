@@ -71,6 +71,7 @@ class MemberPenaltyStatement extends Component
                     'penalty_amount' => $charged ? $penaltyPerDay : 0,
                 ];
             })
+            ->filter(fn ($row) => $row['charged'] && $row['paid'])
             ->sortByDesc('date_string')
             ->values();
     }
@@ -80,11 +81,9 @@ class MemberPenaltyStatement extends Component
         $rows = $this->penaltyRows;
 
         return [
-            'closed_count' => $rows->count(),
-            'charged_count' => $rows->where('charged', true)->count(),
-            'paid_count' => $rows->where('charged', true)->where('paid', true)->count(),
-            'forgiven_count' => $rows->where('charged', true)->where('forgiven', true)->count(),
-            'unpaid_count' => $rows->where('charged', true)->where('paid', false)->where('forgiven', false)->count(),
+            'paid_count' => $rows->count(),
+            'total_paid_amount' => (float) $rows->sum('paid_amount'),
+            'penalty_per_day' => max((float) ($this->member->penalty_per_day ?? 0), 0),
         ];
     }
 

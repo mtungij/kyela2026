@@ -78,22 +78,22 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 text-center">
-                            @if($item['is_closed'])
-                                @if($item['penalty_charged'])
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                                        Imepigwa Faini
-                                    </span>
-                                @else
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                                        Hakuna Faini
-                                    </span>
-                                @endif
-                            @else
-                                <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                                    Haikufungwa
-                                </span>
-                            @endif
-                        </td>
+    @if($item['is_closed'])
+        @if($item['is_paid'])
+            <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                Hana Faini
+            </span>
+        @else
+            <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                Amepewa Faini
+            </span>
+        @endif
+    @else
+        <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+            Haikufungwa
+        </span>
+    @endif
+</td>
                         <td class="px-4 py-3 text-center">
                             @if($item['is_closed'])
                                 <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300">
@@ -151,48 +151,7 @@
         <p><strong>Kiasi kwa Kipindi:</strong> {{ number_format($member->amount, 0) }} TSh</p>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-        <h3 class="text-sm md:text-base font-semibold text-cyan-700 dark:text-cyan-300 mb-3">
-            Funga Hesabu - Hali ya Faini kwa Tarehe
-        </h3>
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-700 dark:text-gray-300">
-                <thead class="bg-gray-100 dark:bg-gray-700">
-                    <tr>
-                        <th class="px-4 py-2">Tarehe Iliyofungwa</th>
-                        <th class="px-4 py-2 text-center">Status</th>
-                        <th class="px-4 py-2 text-right">Penalty</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($this->penaltyChargeHistory as $penaltyRow)
-                        <tr>
-                            <td class="px-4 py-2">{{ $penaltyRow['date'] }}</td>
-                            <td class="px-4 py-2 text-center">
-                                @if($penaltyRow['charged'])
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                                        Faini Imewekwa
-                                    </span>
-                                @else
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                                        Hakuna Faini
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-2 text-right font-semibold {{ $penaltyRow['charged'] ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                                {{ $penaltyRow['charged'] ? number_format($penaltyRow['penalty_amount'], 0) : '0' }}
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="px-4 py-4 text-center text-gray-500 dark:text-gray-400">Hakuna tarehe iliyofungwa kwenye kipindi hiki.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+  
 
     <!-- Payment Modal -->
     <div x-show="$wire.showPaymentModal" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center" style="display: {{ $showPaymentModal ? 'flex' : 'none' }};">

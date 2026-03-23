@@ -178,14 +178,16 @@
 
          @foreach($members as $member)
 @php
-    $collection = $member->collections->first();
+            $collection = $member->collections->sortByDesc('id')->first();
 
     $penaltyBalance = 0;
     $totalPenalty = 0;
     $penaltyPaid = 0;
 
     if ($collection) {
-        $penaltyBalance = $collection->penalty_balance;
+                $scheduleEnded = $member->end_date && $member->end_date->lt(\Carbon\Carbon::today());
+                $isCompleted = ((float) $collection->balance <= 0) || ($collection->status === 'completed') || $scheduleEnded;
+                $penaltyBalance = $isCompleted ? 0 : $collection->penalty_balance;
         $totalPenalty = $collection->total_penalty;
         $penaltyPaid = $collection->penalty_paid;
     }

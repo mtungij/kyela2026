@@ -7,7 +7,6 @@ use Livewire\Component;
 
 class MemberPenaltyStatementReport extends Component
 {
-    public string $search = '';
     public ?int $selectedMemberId = null;
 
     public function mount(): void
@@ -28,28 +27,15 @@ class MemberPenaltyStatementReport extends Component
         return Member::query()->when($payType, fn ($query) => $query->where('pay_type', $payType));
     }
 
-    public function selectMember(int $memberId): void
+    public function getMemberOptionsProperty()
     {
-        $this->selectedMemberId = $memberId;
-        $this->search = '';
-    }
-
-    public function getSearchResultsProperty()
-    {
-        if (mb_strlen(trim($this->search)) < 2) {
-            return collect();
-        }
-
-        $term = trim($this->search);
-
         return $this->membersQuery()
-            ->where(function ($query) use ($term) {
-                $query->where('name', 'like', "%{$term}%")
-                    ->orWhere('phone', 'like', "%{$term}%");
-            })
             ->orderBy('name')
-            ->limit(50)
-            ->get(['id', 'name', 'phone']);
+            ->get(['id', 'name', 'phone'])
+            ->map(fn ($member) => [
+                'value' => $member->id,
+                'label' => trim($member->name . ' - ' . ($member->phone ?? 'No phone')),
+            ]);
     }
 
     public function getSelectedMemberProperty(): ?Member
@@ -64,7 +50,7 @@ class MemberPenaltyStatementReport extends Component
     public function render()
     {
         return view('livewire.member-penalty-statement-report', [
-            'searchResults' => $this->searchResults,
+            'memberOptions' => $this->memberOptions,
             'selectedMember' => $this->selectedMember,
         ]);
     }

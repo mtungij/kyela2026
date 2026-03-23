@@ -16,6 +16,7 @@ new class extends Component
     public $payType;
 public $closeButtonLabel = 'Funga Hesabu';
 public $closeButtonDisabled = false;
+
     // Data
     public $totalMembers;
     public $completedMembers;
@@ -59,6 +60,7 @@ public function mount()
         $payType = in_array($this->payType, ['mchango_mdogo', 'mchango_mkubwa'])
             ? $this->payType
             : null;
+
 
         // Total Members
         $this->totalMembers = Member::when($payType, fn($q) => $q->where('pay_type', $payType))
@@ -156,42 +158,111 @@ public function checkClosedStatus()
 
 public function closeAccount()
 {
-    $date = \Carbon\Carbon::parse($this->date);
+    $date = \Carbon\Carbon::parse($this->date)->startOfDay();
 
-    // Only allow closing for today or selected date if not already closed
+    // Prevent duplicate closing
     if (\DB::table('closed_accounts')->whereDate('date', $date)->exists()) {
         $this->checkClosedStatus();
         return;
     }
 
-    $membersNotPaid = Member::whereDate('start_date', '<=', $date)
-        ->whereDoesntHave('payments', fn($q) => $q->whereDate('payment_date', $date))
+    // Get eligible members (same as controller)
+    $eligibleMembers = \App\Models\Member::whereDate('start_date', '<=', $date)
+        ->where(function ($q) use ($date) {
+            $q->whereNull('end_date')
+              ->orWhereDate('end_date', '>=', $date);
+        })
+        ->with(['payments' => function ($query) {
+            $query->where('payment_type', 'regular');
+        }])
         ->get();
 
-    \DB::transaction(function () use ($membersNotPaid) {
-        foreach ($membersNotPaid as $member) {
-            $collection = Collection::firstOrCreate(
+    \DB::transaction(function () use ($eligibleMembers, $date) {
+
+        foreach ($eligibleMembers as $member) {
+
+            $existingCollection = \App\Models\Collection::where('member_id', $member->id)
+                ->orderByDesc('id')
+                ->first();
+
+            // ✅ Skip completed members
+            if ($existingCollection &&
+                ($existingCollection->balance <= 0 || $existingCollection->status === 'completed')) {
+                continue;
+            }
+
+            // 🚨 ACCUMULATION LOGIC (SAME AS CONTROLLER)
+
+            if ((float) $member->amount > 0) {
+
+                $scheduleStart = \Carbon\Carbon::parse($member->start_date)->startOfDay();
+
+                $memberEndDate = $member->end_date
+                    ? \Carbon\Carbon::parse($member->end_date)->startOfDay()
+                    : null;
+
+                // Limit to end_date
+                $effectiveDate = $memberEndDate && $memberEndDate->lt($date)
+                    ? $memberEndDate
+                    : $date->copy();
+
+                // If not started → skip
+                if ($effectiveDate->lt($scheduleStart)) {
+                    continue;
+                }
+
+                // Days expected
+                $daysPassed = $scheduleStart->diffInDays($effectiveDate) + 1;
+
+                // Expected amount
+                $expectedAmount = $daysPassed * (float) $member->amount;
+
+                // 🔥 TOTAL PAID (ALL TIME)
+                $totalPaid = (float) $member->payments->sum('amount');
+
+                // ✅ If covered → NO penalty
+                if ($totalPaid >= $expectedAmount) {
+                    continue;
+                }
+            }
+
+            // ❌ NOT COVERED → APPLY PENALTY
+            $collection = \App\Models\Collection::firstOrCreate(
                 ['member_id' => $member->id],
-                ['total_penalty' => 0, 'penalty_balance' => 0]
+                [
+                    'total_penalty' => 0,
+                    'penalty_balance' => 0,
+                    'last_payment_date' => $date->toDateString(),
+                ]
             );
 
-            $collection->increment('total_penalty', $member->penalty_per_day);
-            $collection->increment('penalty_balance', $member->penalty_per_day);
+            $collection->total_penalty += $member->penalty_per_day;
+            $collection->penalty_balance += $member->penalty_per_day;
+            $collection->last_payment_date = $date->toDateString();
+
+            $collection->save();
         }
+
+        // Mark as closed
+        \DB::table('closed_accounts')->insert([
+            'date' => $date->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     });
 
-    // Save closed account
-    \DB::table('closed_accounts')->insert([
-        'date' => $date,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-
+    // Refresh UI
     $this->checkClosedStatus();
     $this->loadData();
 
-    session()->flash('success', 'Hesabu imefungwa kikamilifu tarehe ' . $date->format('d/m/Y'));
+    session()->flash(
+        'success',
+        'Hesabu imefungwa tarehe ' . $date->format('d/m/Y') .
+        ' na faini imeongezwa kwa ambao hawajafikia kiwango.'
+    );
 }
+
+
 
     public function downloadPdf()
 {
@@ -230,7 +301,7 @@ public function closeAccount()
 
     {{-- Header --}}
     <h1 class="text-xl sm:text-2xl font-semibold mb-6 text-gray-900 dark:text-white">
-        📊 Ripoti ya Siku - Funga Hesabu
+        Ripoti ya Siku - Funga Hesabu
     </h1>
 
     {{-- Filters --}}
@@ -250,11 +321,13 @@ public function closeAccount()
         </button>
 
       <button wire:click="closeAccount"
-        wire:loading.attr="disabled"
-        :disabled="{{ $closeButtonDisabled ? 'true' : 'false' }}"
-        class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg px-4 py-2 transition">
+    wire:loading.attr="disabled"
+    @disabled($closeButtonDisabled)
+    class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg px-4 py-2 transition">
+
     <span wire:loading>Inafunga...</span>
     <span wire:loading.remove>{{ $closeButtonLabel }}</span>
+
 </button>
 
     </div>

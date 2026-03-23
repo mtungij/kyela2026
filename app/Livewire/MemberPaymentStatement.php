@@ -91,7 +91,10 @@ class MemberPaymentStatement extends Component
 
         $schedule = [];
         $currentDate = Carbon::parse($this->member->start_date)->startOfDay();
-        $today = now()->endOfDay();
+        // Use end_date if set, otherwise fall back to today
+        $endLimit = $this->member->end_date
+            ? Carbon::parse($this->member->end_date)->endOfDay()
+            : now()->endOfDay();
         $expectedAmount = $this->member->amount;
 
         // Use total accumulated paid amount and fill from start_date forward
@@ -99,16 +102,51 @@ class MemberPaymentStatement extends Component
             ->where('payment_type', 'regular')
             ->sum('amount');
 
+        $allRegularPaymentDates = Payment::where('member_id', $this->member->id)
+            ->where('payment_type', 'regular')
+            ->pluck('payment_date')
+            ->map(fn ($date) => Carbon::parse($date)->toDateString())
+            ->flip();
+
+        $paymentsUpToEnd = Payment::where('member_id', $this->member->id)
+            ->where('payment_type', 'regular')
+            ->whereDate('payment_date', '<=', $endLimit->toDateString())
+            ->get(['payment_date', 'amount'])
+            ->map(function ($payment) {
+                return [
+                    'date' => Carbon::parse($payment->payment_date)->toDateString(),
+                    'amount' => (float) $payment->amount,
+                ];
+            })
+            ->sortBy('date')
+            ->values();
+
+        $paymentPointer = 0;
+        $runningPaid = 0.0;
+
         $closedDates = DB::table('closed_accounts')
             ->whereDate('date', '>=', Carbon::parse($this->member->start_date)->toDateString())
             ->pluck('date')
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
             ->flip();
 
-        // First pass: build schedule from start_date to today
-        while ($currentDate <= $today) {
+        // Build schedule from start_date to end_date (or today if no end_date)
+        while ($currentDate <= $endLimit) {
             $scheduleDate = $currentDate->toDateString();
             $closedOnDate = isset($closedDates[$scheduleDate]);
+
+            while (
+                $paymentPointer < $paymentsUpToEnd->count()
+                && $paymentsUpToEnd[$paymentPointer]['date'] <= $scheduleDate
+            ) {
+                $runningPaid += $paymentsUpToEnd[$paymentPointer]['amount'];
+                $paymentPointer++;
+            }
+
+            $expectedDaysUpToDate = Carbon::parse($this->member->start_date)->startOfDay()
+                ->diffInDays(Carbon::parse($scheduleDate)->startOfDay()) + 1;
+            $expectedAmountUpToDate = $expectedDaysUpToDate * (float) $this->member->amount;
+            $isCoveredAtDate = $runningPaid >= $expectedAmountUpToDate;
 
             if ($remainingPaid >= $expectedAmount) {
                 $displayAmount = $expectedAmount;
@@ -131,7 +169,7 @@ class MemberPaymentStatement extends Component
                 'actual_payment' => null,
                 'user' => null,
                 'is_closed' => $closedOnDate,
-                'penalty_charged' => $closedOnDate && !$isPaid,
+                'penalty_charged' => $closedOnDate && !$isCoveredAtDate,
             ];
 
             match ($this->member->type) {
@@ -142,35 +180,37 @@ class MemberPaymentStatement extends Component
             };
         }
 
-        // Second pass: extend schedule for future periods if overpayment exists
-        while ($remainingPaid > 0) {
-            $scheduleDate = $currentDate->toDateString();
+        // Second pass: extend for overpayment only when no end_date is set
+        if (!$this->member->end_date) {
+            while ($remainingPaid > 0) {
+                $scheduleDate = $currentDate->toDateString();
 
-            if ($remainingPaid >= $expectedAmount) {
-                $displayAmount = $expectedAmount;
-                $remainingPaid -= $expectedAmount;
-            } else {
-                $displayAmount = $remainingPaid;
-                $remainingPaid = 0;
+                if ($remainingPaid >= $expectedAmount) {
+                    $displayAmount = $expectedAmount;
+                    $remainingPaid -= $expectedAmount;
+                } else {
+                    $displayAmount = $remainingPaid;
+                    $remainingPaid = 0;
+                }
+
+                $schedule[] = [
+                    'date' => $currentDate->format('d/m/Y'),
+                    'date_string' => $scheduleDate,
+                    'amount' => $displayAmount,
+                    'is_paid' => true,
+                    'actual_payment' => null,
+                    'user' => null,
+                    'is_closed' => false,
+                    'penalty_charged' => false,
+                ];
+
+                match ($this->member->type) {
+                    'daily' => $currentDate->addDay(),
+                    'weekly' => $currentDate->addWeek(),
+                    'monthly' => $currentDate->addMonth(),
+                    default => $currentDate->addDay(),
+                };
             }
-
-            $schedule[] = [
-                'date' => $currentDate->format('d/m/Y'),
-                'date_string' => $scheduleDate,
-                'amount' => $displayAmount,
-                'is_paid' => true,
-                'actual_payment' => null,
-                'user' => null,
-                'is_closed' => false,
-                'penalty_charged' => false,
-            ];
-
-            match ($this->member->type) {
-                'daily' => $currentDate->addDay(),
-                'weekly' => $currentDate->addWeek(),
-                'monthly' => $currentDate->addMonth(),
-                default => $currentDate->addDay(),
-            };
         }
 
         return $schedule;
@@ -221,50 +261,88 @@ class MemberPaymentStatement extends Component
             ->whereDate('date', $collectionDate)
             ->exists();
 
-        $hasPayment = Payment::where('member_id', $this->member->id)
-            ->whereDate('payment_date', $collectionDate)
-            ->exists();
+        $periodEnd = $this->member->end_date
+            ? min(Carbon::parse($this->member->end_date)->toDateString(), $collectionDate)
+            : $collectionDate;
+
+        $expectedDaysUpToDate = Carbon::parse($this->member->start_date)
+            ->startOfDay()
+            ->diffInDays(Carbon::parse($periodEnd)->startOfDay()) + 1;
+
+        $expectedAmountUpToDate = $expectedDaysUpToDate * (float) $this->member->amount;
+
+        $totalPaidUpToDate = (float) Payment::where('member_id', $this->member->id)
+            ->where('payment_type', 'regular')
+            ->whereDate('payment_date', '<=', $collectionDate)
+            ->sum('amount');
+
+        $isCoveredAtDate = $totalPaidUpToDate >= $expectedAmountUpToDate;
 
         return [
             'date' => Carbon::parse($collectionDate)->format('d/m/Y'),
-            'charged' => $closed && !$hasPayment,
+            'charged' => $closed && !$isCoveredAtDate,
             'closed' => $closed,
-            'has_payment' => $hasPayment,
+            'has_payment' => $isCoveredAtDate,
         ];
     }
+public function getPenaltyChargeHistoryProperty()
+{
+    if (!$this->member->start_date) {
+        return collect();
+    }
 
-    public function getPenaltyChargeHistoryProperty()
-    {
-        if (!$this->member->start_date) {
-            return collect();
+    $startDate = Carbon::parse($this->member->start_date)->toDateString();
+    $endDate = $this->member->end_date
+        ? Carbon::parse($this->member->end_date)->toDateString()
+        : now()->toDateString();
+
+    // Get all closed dates in the member period
+    $closedDates = DB::table('closed_accounts')
+        ->whereDate('date', '>=', $startDate)
+        ->whereDate('date', '<=', $endDate)
+        ->orderBy('date')
+        ->pluck('date')
+        ->map(fn($date) => Carbon::parse($date)->toDateString());
+
+    // Get all payments for the member within the period, sorted by date
+    $payments = Payment::where('member_id', $this->member->id)
+        ->where('payment_type', 'regular')
+        ->whereDate('payment_date', '>=', $startDate)
+        ->whereDate('payment_date', '<=', $endDate)
+        ->orderBy('payment_date')
+        ->get(['payment_date', 'amount'])
+        ->map(fn($payment) => [
+            'date' => Carbon::parse($payment->payment_date)->toDateString(),
+            'amount' => (float) $payment->amount,
+        ]);
+
+    $runningPaid = 0.0;
+    $paymentPointer = 0;
+
+    // Map each closed date to penalty status based on cumulative payments
+    return $closedDates->map(function ($date) use ($payments, &$runningPaid, &$paymentPointer) {
+        // Add payments up to this date to running total
+        while ($paymentPointer < $payments->count() && $payments[$paymentPointer]['date'] <= $date) {
+            $runningPaid += $payments[$paymentPointer]['amount'];
+            $paymentPointer++;
         }
 
-        $startDate = Carbon::parse($this->member->start_date)->toDateString();
-        $today = now()->toDateString();
+        $expectedDays = Carbon::parse($this->member->start_date)
+            ->startOfDay()
+            ->diffInDays(Carbon::parse($date)->startOfDay()) + 1;
 
-        $closedDates = DB::table('closed_accounts')
-            ->whereDate('date', '>=', $startDate)
-            ->whereDate('date', '<=', $today)
-            ->orderByDesc('date')
-            ->pluck('date')
-            ->map(fn ($date) => Carbon::parse($date)->toDateString());
+        $expectedAmount = $expectedDays * (float) $this->member->amount;
 
-        $allPaymentDates = Payment::where('member_id', $this->member->id)
-            ->pluck('payment_date')
-            ->map(fn ($date) => Carbon::parse($date)->toDateString())
-            ->flip();
+        $charged = $runningPaid < $expectedAmount;
 
-        return $closedDates->map(function ($date) use ($allPaymentDates) {
-            $charged = !isset($allPaymentDates[$date]);
-
-            return [
-                'date' => Carbon::parse($date)->format('d/m/Y'),
-                'date_string' => $date,
-                'charged' => $charged,
-                'penalty_amount' => $charged ? (float) $this->member->penalty_per_day : 0,
-            ];
-        });
-    }
+        return [
+            'date' => Carbon::parse($date)->format('d/m/Y'),
+            'date_string' => $date,
+            'charged' => $charged,
+            'penalty_amount' => $charged ? (float) $this->member->penalty_per_day : 0,
+        ];
+    })->sortByDesc('date_string')->values();
+}
 
     public function render()
     {
