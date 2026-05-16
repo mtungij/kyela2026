@@ -140,6 +140,16 @@
                             </button>
                         </div>
                     </div>
+                    @if ($errors->bulkPenalty->any())
+                        <div class="mb-3 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-gray-800 dark:text-red-400" role="alert">
+                            <span class="font-medium">Kuna makosa!</span>
+                            <ul class="mt-1.5 ml-4 list-disc list-inside">
+                                @foreach ($errors->bulkPenalty->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                 @endif
 
                 <div class="relative overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
@@ -282,6 +292,7 @@
                                                 <button
                                                     id="dropdown-{{ $member->id }}-button"
                                                     data-dropdown-toggle="dropdown-{{ $member->id }}"
+                                                    type="button"
                                                     class="inline-flex items-center justify-center gap-2
                                                            px-3 py-2 text-xs font-medium
                                                            rounded-lg text-white

@@ -342,7 +342,7 @@ public function downloadPdf(Request $request)
                 ->with('error', 'Hairuhusiwi kusamehe faini kwa wingi.');
         }
 
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('bulkPenalty', [
             'member_ids' => ['required', 'array', 'min:1'],
             'member_ids.*' => ['integer', 'exists:members,id'],
         ]);
@@ -388,7 +388,7 @@ public function downloadPdf(Request $request)
                 ->with('error', 'Hairuhusiwi kusamehe faini kwa tarehe.');
         }
 
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('bulkPenalty', [
             'member_ids' => ['required', 'array', 'min:1'],
             'member_ids.*' => ['integer', 'exists:members,id'],
             'forgive_date' => ['required', 'date'],
