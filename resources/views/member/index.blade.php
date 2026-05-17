@@ -281,6 +281,7 @@
                                             <div class="relative inline-block text-left">
                                                 <button
                                                     id="dropdown-{{ $member->id }}-button"
+                                                    type="button"
                                                     data-dropdown-toggle="dropdown-{{ $member->id }}"
                                                     class="inline-flex items-center justify-center gap-2
                                                            px-3 py-2 text-xs font-medium
