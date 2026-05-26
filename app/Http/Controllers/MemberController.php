@@ -209,7 +209,7 @@ public function downloadPdf(Request $request)
     $message = "Karibu {$validatedData['name']} kwenye Kalumbulu Group Kikundi cha kuwezeshana. Karibu tushirikiane na kuwezeshana!";
     $this->sendsms($validatedData['phone'], $message);
 
-    return redirect()->route('members.index')
+    return $this->redirectToMembersBySession()
         ->with('success', 'Member created successfully.');
 }
 
@@ -289,7 +289,7 @@ public function downloadPdf(Request $request)
         }
     });
 
-    return redirect()->route('members.index')->with('success', 'Member updated successfully.');
+    return $this->redirectToMembersBySession()->with('success', 'Member updated successfully.');
 }
 
 
@@ -300,14 +300,14 @@ public function downloadPdf(Request $request)
     {
         // Only admin can delete members
         if (!auth()->user()->isAdmin()) {
-            return redirect()->route('members.index')
+            return $this->redirectToMembersBySession()
                 ->with('error', 'Hairuhusiwi kufuta wanachama. Harufu za admin kwa kufanya hatua hii.');
         }
 
         $member = Member::findOrFail($id);
         $member->delete();
         
-        return redirect()->route('members.index')->with('success', 'Member deleted successfully.');
+        return $this->redirectToMembersBySession()->with('success', 'Member deleted successfully.');
     }
 
     /**

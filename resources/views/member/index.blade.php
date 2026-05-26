@@ -439,6 +439,15 @@
 
 <!-- Delete Confirmation Modals -->
 @foreach($members as $member)
+@php
+    $modalCollection = $member->collections->sortByDesc('id')->first();
+    $modalPenaltyBalance = 0;
+    if ($modalCollection) {
+        $modalScheduleEnded = $member->end_date && $member->end_date->lt(\Carbon\Carbon::today());
+        $modalIsCompleted = ((float) $modalCollection->balance <= 0) || ($modalCollection->status === 'completed') || $modalScheduleEnded;
+        $modalPenaltyBalance = $modalIsCompleted ? 0 : $modalCollection->penalty_balance;
+    }
+@endphp
 <div id="deleteModal-{{ $member->id }}" tabindex="-1" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
     <div class="relative p-4 w-full max-w-md max-h-full">
         <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4 md:p-6">
@@ -485,9 +494,9 @@
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13V8m0 8h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
                 </svg>
                 <h3 class="mb-4 text-lg text-gray-500 dark:text-gray-400">Samehe Faini kwa <span class="font-semibold">{{ $member->name }}</span>?</h3>
-                @if($penaltyBalance > 0)
+                @if($modalPenaltyBalance > 0)
                 <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-                    Faini ya sasa: <span class="font-bold text-orange-600 dark:text-orange-400">{{ number_format($penaltyBalance) }} TSh</span>
+                    Faini ya sasa: <span class="font-bold text-orange-600 dark:text-orange-400">{{ number_format($modalPenaltyBalance) }} TSh</span>
                 </p>
                 @endif
                 <div class="flex items-center space-x-4 justify-center">
@@ -540,7 +549,7 @@
             </div>
             <!-- Modal body -->
             
-            @if ($errors->any())
+            @if ($errors->any() && !$errors->has('member_ids'))
                 <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
                     <span class="font-medium">Kuna makosa!</span>
                     <ul class="mt-1.5 ml-4 list-disc list-inside">
@@ -660,7 +669,7 @@
     </div>
 </div>
 
-@if ($errors->any())
+@if ($errors->any() && !$errors->has('member_ids'))
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('defaultModal');
