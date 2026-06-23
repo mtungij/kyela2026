@@ -280,6 +280,7 @@
                                         <td class="px-4 py-3">
                                             <div class="relative inline-block text-left">
                                                 <button
+                                                    type="button"
                                                     id="dropdown-{{ $member->id }}-button"
                                                     type="button"
                                                     data-dropdown-toggle="dropdown-{{ $member->id }}"
