@@ -17,6 +17,10 @@
 
         <flux:spacer />
 
+        <flux:radio.group x-data variant="segmented" x-model="$flux.appearance" aria-label="{{ __('Appearance') }}" class="me-3">
+            <flux:radio value="light" icon="sun" aria-label="{{ __('Light mode') }}">{{ __('Light') }}</flux:radio>
+            <flux:radio value="dark" icon="moon" aria-label="{{ __('Dark mode') }}">{{ __('Dark') }}</flux:radio>
+        </flux:radio.group>
 
 
         <flux:dropdown position="top" align="start">
@@ -80,6 +84,9 @@
                 <flux:sidebar.group   expandable
                :expanded="false" heading="{{ $membersHeading }}"  class="grid">
                 <flux:sidebar.item  badge="{{ $membersCount }}" href="{{ $membersRoute }}" >Sajili Member</flux:sidebar.item>
+                @if(auth()->user()->isAdmin() && $payType)
+                    <flux:sidebar.item icon="arrow-path" href="{{ route('game-cycles.create') }}">Anzisha Mzunguko Mpya</flux:sidebar.item>
+                @endif
                 {{-- <flux:sidebar.item href="#" badge="12">Member Wote</flux:sidebar.item> --}}
         
             </flux:sidebar.group>

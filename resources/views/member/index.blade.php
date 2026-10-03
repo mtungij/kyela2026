@@ -7,6 +7,16 @@
     <div class=" px-4 mx-auto lg:px-12">
         <div class="relative bg-white shadow-md dark:bg-gray-800 sm:rounded-lg">
 
+            @if($activeCycle)
+                <div class="border-b border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-950 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-100">
+                    Mzunguko unaoendelea: {{ $activeCycle->start_date->format('d-m-Y') }} hadi {{ $activeCycle->end_date->format('d-m-Y') }}
+                    | Siku {{ $activeCycleDays }}
+                    @if($activeCycleAmount)
+                        | TSh {{ number_format($activeCycleAmount, 0) }} kwa kila malipo
+                    @endif
+                </div>
+            @endif
+
             <!-- Top Bar -->
             <div class="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
 
@@ -418,13 +428,13 @@
         class="amount-input bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
                focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5"
         readonly
-        value="{{ old('amount') ?? ($editPayTypeValue === 'mchango_mdogo' ? 5000 : ($editPayTypeValue === 'mchango_mkubwa' ? 10000 : '')) }}"
+        value="{{ $activeCycleAmount ?? (old('amount') ?? ($editPayTypeValue === 'mchango_mdogo' ? 5000 : ($editPayTypeValue === 'mchango_mkubwa' ? 10000 : ''))) }}"
     >
 </div>
 
                     <div>
-                        <label for="edit_number_type_{{ $member->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Idadi Ya Malipo</label>
-                        <input type="number" name="number_type" id="edit_number_type_{{ $member->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500" value="{{ $member->number_type }}" required>
+                        <label for="edit_number_type_{{ $member->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Idadi Ya Siku Za Mzunguko</label>
+                        <input type="number" name="number_type" id="edit_number_type_{{ $member->id }}" class="bg-gray-100 border border-gray-300 text-gray-700 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300" value="{{ $activeCycleDays ?? $member->number_type }}" readonly>
                     </div>
                 </div>
                 <button type="submit" class="text-white inline-flex items-center bg-cyan-700 hover:bg-cyan-800 focus:ring-4 focus:outline-none focus:ring-cyan-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-cyan-600 dark:hover:bg-cyan-700 dark:focus:ring-cyan-800">
@@ -553,6 +563,11 @@
 
             <form action="{{ route('members.store') }}" method="POST">
                 @csrf
+                @if($activeCycle)
+                    <div class="mx-4 mt-4 border-l-4 border-cyan-600 bg-cyan-50 p-3 text-sm text-cyan-950 dark:bg-cyan-950/40 dark:text-cyan-100">
+                        Mzunguko active: {{ $activeCycle->start_date->format('d-m-Y') }} hadi {{ $activeCycle->end_date->format('d-m-Y') }} (siku {{ $activeCycleDays }}).
+                    </div>
+                @endif
                 <div class="grid gap-4 mb-4 sm:grid-cols-2">
                     <div>
                         <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Jina</label>
@@ -622,7 +637,7 @@
            dark:bg-gray-700 dark:border-gray-600 dark:text-white
            @error('amount') border-red-500 @enderror"
     placeholder="Kiasi Cha Kuchangia"
-    value="{{ old('amount') ?? ($selectedPayType === 'mchango_mdogo' ? 5000 : ($selectedPayType === 'mchango_mkubwa' ? 10000 : '')) }}"
+    value="{{ $activeCycleAmount ?? (old('amount') ?? ($selectedPayType === 'mchango_mdogo' ? 5000 : ($selectedPayType === 'mchango_mkubwa' ? 10000 : ''))) }}"
     readonly
 >
    
@@ -630,8 +645,8 @@
 
 
                     <div>
-                        <label for="number_type" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Idadi Ya Malipo</label>
-                        <input type="number" name="number_type" id="number_type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('number_type') border-red-500 @enderror" placeholder="Idadi jumla ya siku za malipo"  value="{{ old('number_type') }}">
+                        <label for="number_type" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Idadi Ya Siku Za Mzunguko</label>
+                        <input type="number" name="number_type" id="number_type" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('number_type') border-red-500 @enderror" placeholder="Hesabu ya siku za mzunguko" value="{{ $activeCycleDays ?? old('number_type') }}" @if($activeCycle) readonly @endif>
                         @error('number_type')
                             <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
                         @enderror
@@ -640,7 +655,7 @@
 
                         <div>
                         <label for="start_date" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Anaanza kutoa Lini</label>
-                        <input type="date" name="start_date" id="start_date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('start_date') border-red-500 @enderror" placeholder="Anza kutoa tarehe"  value="{{ old('start_date') }}">
+                        <input type="date" name="start_date" id="start_date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-cyan-600 focus:border-cyan-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-cyan-500 dark:focus:border-cyan-500 @error('start_date') border-red-500 @enderror" placeholder="Anza kutoa tarehe" value="{{ $activeCycle?->start_date->toDateString() ?? old('start_date') }}" @if($activeCycle) readonly @endif>
                         @error('start_date')
                             <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
                         @enderror

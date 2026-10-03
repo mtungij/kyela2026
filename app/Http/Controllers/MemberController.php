@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Member;
+use App\Models\GameCycle;
 use App\Models\Collection;
 use App\Models\Payment;
 use App\Models\PenaltyForgiveness;
@@ -20,7 +21,9 @@ class MemberController extends Controller
 public function index(Request $request)
 {
     $search = $request->get('search');
-    $payType = $request->get('pay_type', $request->route('pay_type'));
+    $payType = $request->route('pay_type')
+        ?? $request->session()->get('pay_type')
+        ?? $request->query('pay_type');
     $paidTodayFilter = $request->get('paid_today');
     $perPage = (int) $request->get('per_page', 10);
     if (!in_array($perPage, [10, 50, 100], true)) {
@@ -30,6 +33,15 @@ public function index(Request $request)
     if ($payType && !in_array($payType, ['mchango_mdogo', 'mchango_mkubwa'], true)) {
         $payType = null;
     }
+
+    $activeCycle = $payType
+        ? GameCycle::where('pay_type', $payType)->where('status', 'active')->whereDate('end_date', '>=', today())->latest('start_date')->first()
+        : null;
+    $activeCycleDays = $activeCycle
+        ? $activeCycle->start_date->diffInDays($activeCycle->end_date) + 1
+        : null;
+    $activeCycleAmount = $activeCycle?->contribution_amount
+        ?? $activeCycle?->collections()->value('installment_amount');
 
     $today = Carbon::today();
 
@@ -81,7 +93,10 @@ public function index(Request $request)
         'members',
         'payType',
         'totalPaidToday',
-        'countPaidMembersToday'
+        'countPaidMembersToday',
+        'activeCycle',
+        'activeCycleDays',
+        'activeCycleAmount'
     ));
 }
 
@@ -146,9 +161,9 @@ public function downloadPdf(Request $request)
         'address' => 'nullable|string|max:255',
         'business_address' => 'nullable|string|max:255',
         'type' => 'required|in:daily,weekly,monthly',
-        'start_date' => 'required|date',
+        'start_date' => 'nullable|date',
         'pay_type' => 'required|in:mchango_mdogo,mchango_mkubwa',
-        'number_type' => 'required|numeric|min:1',
+        'number_type' => 'nullable|numeric|min:1',
         'penalty_per_day' => 'nullable|numeric|min:0',
     ]);
 
@@ -176,18 +191,30 @@ public function downloadPdf(Request $request)
         $validatedData['phone'] = '255' . $phone;
     }
 
-    // Calculate end_date: start_date + number_type days
-   if (isset($validatedData['start_date']) && isset($validatedData['number_type'])) {
-    $startDate = Carbon::parse($validatedData['start_date']);
-    $validatedData['end_date'] = $startDate->copy()
-        ->addDays((int)$validatedData['number_type'] - 1)
-        ->format('Y-m-d');
-}
-
-
     DB::transaction(function () use ($validatedData) {
 
         // Create member
+        $activeCycle = GameCycle::where('pay_type', $validatedData['pay_type'])
+            ->where('status', 'active')
+            ->whereDate('end_date', '>=', today())
+            ->latest('start_date')
+            ->first();
+
+        if ($activeCycle) {
+            $validatedData['start_date'] = $activeCycle->start_date->toDateString();
+            $validatedData['end_date'] = $activeCycle->end_date->toDateString();
+            $validatedData['number_type'] = $activeCycle->start_date->diffInDays($activeCycle->end_date) + 1;
+            $validatedData['amount'] = $activeCycle->contribution_amount
+                ?? $activeCycle->collections()->value('installment_amount')
+                ?? $validatedData['amount'];
+        } else {
+            $validatedData['number_type'] = max((int) ($validatedData['number_type'] ?? 1), 1);
+            $validatedData['start_date'] = $validatedData['start_date'] ?? today()->toDateString();
+            $validatedData['end_date'] = Carbon::parse($validatedData['start_date'])
+                ->addDays($validatedData['number_type'] - 1)
+                ->toDateString();
+        }
+
         $member = Member::create($validatedData);
 
         // Total amount = amount * number_type
@@ -195,6 +222,8 @@ public function downloadPdf(Request $request)
 
         Collection::create([
             'member_id' => $member->id,
+            'game_cycle_id' => $activeCycle?->id,
+            'installment_amount' => $member->amount,
             'total_amount' => $totalAmount,
             'amount_paid' => 0,
             'balance' => $totalAmount,
@@ -209,7 +238,11 @@ public function downloadPdf(Request $request)
     $message = "Karibu {$validatedData['name']} kwenye Kalumbulu Group Kikundi cha kuwezeshana. Karibu tushirikiane na kuwezeshana!";
     $this->sendsms($validatedData['phone'], $message);
 
-    return redirect()->route('members.index')
+    $membersRoute = $validatedData['pay_type'] === 'mchango_mdogo'
+        ? 'members.index.mdogo'
+        : 'members.index.mkubwa';
+
+    return redirect()->route($membersRoute)
         ->with('success', 'Member created successfully.');
 }
 
@@ -241,7 +274,7 @@ public function downloadPdf(Request $request)
         'business_address' => 'nullable|string|max:255',
         'pay_type' => 'required|in:mchango_mdogo,mchango_mkubwa', // new field
         'type' => 'required|in:daily,weekly,monthly',
-        'number_type' => 'required|numeric|min:1',
+        'number_type' => 'nullable|numeric|min:1',
     ]);
 
     // Add 255 prefix to phone if not already present
@@ -270,26 +303,43 @@ public function downloadPdf(Request $request)
 
     $member = Member::findOrFail($id);
 
-    // Calculate end_date if start_date exists and number_type is provided
-    if ($member->start_date && isset($validatedData['number_type'])) {
-        $startDate = Carbon::parse($member->start_date);
-        $validatedData['end_date'] = $startDate->copy()->addDays((int)$validatedData['number_type'])->format('Y-m-d');
-    }
-
     DB::transaction(function () use ($member, $validatedData) {
+        $activeCycle = GameCycle::where('pay_type', $member->pay_type)
+            ->where('status', 'active')
+            ->whereDate('end_date', '>=', today())
+            ->latest('start_date')
+            ->first();
+
+        if ($activeCycle) {
+            $cycleDays = $activeCycle->start_date->diffInDays($activeCycle->end_date) + 1;
+            $validatedData['pay_type'] = $member->pay_type;
+            $validatedData['amount'] = $activeCycle->contribution_amount
+                ?? $activeCycle->collections()->value('installment_amount')
+                ?? $member->amount;
+            $validatedData['number_type'] = $cycleDays;
+            $validatedData['start_date'] = $activeCycle->start_date->toDateString();
+            $validatedData['end_date'] = $activeCycle->end_date->toDateString();
+        } else {
+            unset($validatedData['number_type']);
+        }
+
         $member->update($validatedData);
         $member->refresh();
 
-        $collection = $member->collections()->first();
+        $collection = $member->currentCollection()->first();
         if ($collection) {
-            $newTotalAmount = $member->amount * $member->number_type;
+            $newTotalAmount = (float) ($collection->installment_amount ?? $member->amount) * (int) $member->number_type;
             $collection->total_amount = $newTotalAmount;
             $collection->balance = max($newTotalAmount - $collection->amount_paid, 0);
             $collection->save();
         }
     });
 
-    return redirect()->route('members.index')->with('success', 'Member updated successfully.');
+    $membersRoute = $validatedData['pay_type'] === 'mchango_mdogo'
+        ? 'members.index.mdogo'
+        : 'members.index.mkubwa';
+
+    return redirect()->route($membersRoute)->with('success', 'Member updated successfully.');
 }
 
 
@@ -316,7 +366,7 @@ public function downloadPdf(Request $request)
     public function forgivePenalty(string $id)
     {
         $member = Member::findOrFail($id);
-        $collection = $member->collections()->first();
+        $collection = $member->currentCollection()->first();
         
         if ($collection && $collection->penalty_balance > 0) {
             DB::transaction(function () use ($collection) {
@@ -348,7 +398,7 @@ public function downloadPdf(Request $request)
         ]);
 
         /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Member> $members */
-        $members = Member::query()->with('collections')
+        $members = Member::query()->with('currentCollection')
             ->whereIn('id', $validated['member_ids'])
             ->get();
 
@@ -357,14 +407,15 @@ public function downloadPdf(Request $request)
         DB::transaction(function () use ($members, &$forgivenCount) {
             /** @var \App\Models\Member $member */
             foreach ($members as $member) {
-                $updated = Collection::where('member_id', $member->id)
-                    ->where('penalty_balance', '>', 0)
-                    ->update([
+                $collection = $member->currentCollection;
+                $updated = $collection && $collection->penalty_balance > 0
+                    ? $collection->update([
                         'total_penalty' => 0,
                         'penalty_paid' => 0,
                         'penalty_balance' => 0,
                         'last_payment_date' => now(),
-                    ]);
+                    ])
+                    : false;
 
                 if ($updated > 0) {
                     $forgivenCount++;
@@ -431,7 +482,7 @@ public function downloadPdf(Request $request)
                     continue;
                 }
 
-                $collection = Collection::where('member_id', $member->id)->first();
+                $collection = $member->currentCollection()->first();
                 if (!$collection) {
                     continue;
                 }

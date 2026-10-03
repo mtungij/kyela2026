@@ -40,11 +40,12 @@ public function show($memberId, Request $request)
         $payType = null;
     }
 
-    $member = Member::with('collections')->findOrFail($memberId);
-    $collection = $member->collections()->first(); 
-
-//   $member = Member::with('collections')->findOrFail($memberId);
-$collection = $member->collections()->first();
+    $member = Member::with('collections.gameCycle')->findOrFail($memberId);
+    abort_if($payType && $member->pay_type !== $payType, 403);
+    $collections = $member->collections()->with('gameCycle')->orderByDesc('id')->get();
+    $collection = $request->filled('collection_id')
+        ? $member->collections()->with('gameCycle')->findOrFail($request->integer('collection_id'))
+        : $member->currentCollection()->with('gameCycle')->first();
 
 if ($collection) {
     $collection->refresh(); // Ensure latest DB values
@@ -72,15 +73,15 @@ if ($collection) {
         ->orderBy('name')
         ->get();
 
-    return view('collections.show', compact('member', 'collection', 'allPayments', 'members', 'payType'));
+    return view('collections.show', compact('member', 'collection', 'collections', 'allPayments', 'members', 'payType'));
 }
 
 public function paymentSms($memberId)
 {
     $member = Member::findOrFail($memberId);
-    $memberpayments = $member->collections()->first();
+    $memberpayments = $member->currentCollection()->first();
     
-   $sumPaid = $member->collections()->sum('amount_paid');
+    $sumPaid = $memberpayments?->amount_paid ?? 0;
      $remain = $memberpayments->total_amount -  $sumPaid;
      $total = $memberpayments->total_amount;    
      $name = $member->name;
@@ -119,8 +120,18 @@ $massage = "Habari {$member->name}, tunakukumbusha katika jumla ya kiasi cha kuc
         'notes' => 'nullable|string',
     ]);
 
-    \DB::transaction(function () use ($validated) {
+    \DB::transaction(function () use ($validated, $request) {
         $collection = \App\Models\Collection::find($validated['collection_id']);
+        if (!$collection || (int) $collection->member_id !== (int) $validated['member_id']) {
+            abort(404);
+        }
+
+        $member = \App\Models\Member::findOrFail($validated['member_id']);
+        $payType = $request->session()->get('pay_type');
+        if ($payType && $member->pay_type !== $payType) {
+            abort(403);
+        }
+
         $paymentAmount = $validated['amount'];
         $paymentType = $validated['payment_type'];
 
@@ -171,7 +182,6 @@ $massage = "Habari {$member->name}, tunakukumbusha katika jumla ya kiasi cha kuc
         $collection->save();
 
         // Send SMS notification
-        $member = \App\Models\Member::find($validated['member_id']);
         $totalPaid = $collection->amount_paid;
         $remain = $collection->balance;
         $currentDate = \Carbon\Carbon::parse($validated['payment_date'])->format('d-m-Y');
@@ -203,7 +213,10 @@ if ($paymentType === 'penalty') {
             ->with('success', 'Malipo yamefanikiwa kurekodiwa!');
     }
 
-    return redirect()->route('collections.show', ['member' => $validated['member_id']])
+    return redirect()->route('collections.show', [
+        'member' => $validated['member_id'],
+        'collection_id' => $validated['collection_id'],
+    ])
         ->with('success', 'Malipo yamefanikiwa kurekodiwa!');
 }
 

@@ -88,24 +88,38 @@
 
                          <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
                             <span>kuanza</span>
-                            <span>{{\Carbon\Carbon::parse($member->start_date)->format('d-m-Y')}}</span>
+                            <span>{{ ($collection->gameCycle?->start_date ?? $member->start_date)?->format('d-m-Y') }}</span>
                         </li>
 
                          <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
                             <span>kumaliza</span>
-                            <span>{{\Carbon\Carbon::parse($member->end_date)->format('d-m-Y')}}</span>
+                            <span>{{ ($collection->gameCycle?->end_date ?? $member->end_date)?->format('d-m-Y') }}</span>
                         </li>
                       
                          <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
                             <span>Idadi Ya Siku</span>
-                            <span>{{ $member->number_type}}</span>
+                            <span>{{ $collection->gameCycle ? $collection->gameCycle->start_date->diffInDays($collection->gameCycle->end_date) + 1 : $member->number_type }}</span>
                         </li>
                         <li class="flex items-center justify-between py-2 px-3 font-bold text-base">
                             <span>Kiasi kwa siku</span>
-                            <span>{{ number_format($member->amount, 0) }}</span>
+                            <span>{{ number_format($collection?->installment_amount ?? $member->amount, 0) }}</span>
                         </li>
-                       
                     </ul>
+                    @if($collections->count() > 1)
+                        <label for="collection-cycle" class="mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Mzunguko / deni</label>
+                        <select id="collection-cycle" class="mt-1 w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-white" onchange="if (this.value) window.location.href = this.value">
+                            @foreach($collections as $memberCollection)
+                                @php
+                                    $cycleLabel = $memberCollection->gameCycle
+                                        ? $memberCollection->gameCycle->start_date->format('d-m-Y') . ' hadi ' . $memberCollection->gameCycle->end_date->format('d-m-Y')
+                                        : 'Mzunguko wa awali';
+                                @endphp
+                                <option value="{{ route('collections.show', ['member' => $member->id, 'collection_id' => $memberCollection->id]) }}" {{ $memberCollection->id === $collection->id ? 'selected' : '' }}>
+                                    {{ $cycleLabel }} | Deni: TSh {{ number_format($memberCollection->balance, 0) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
                     @endif
                 </div>
             </div>
@@ -198,7 +212,7 @@
                      <option  value="{{ $m->id }}" {{ $m->id == $member->id ? 'selected' : '' }}>
                                     {{ mb_strtoupper($m->name , 'UTF-8') }} - {{ $m->phone }}
                                 </option>
-                <?php endforeach; ?>
+                @endforeach
             </select>
         </div>
     </div>

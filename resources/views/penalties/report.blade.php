@@ -128,7 +128,7 @@
                     @forelse($collections as $collection)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                             <td class="px-6 py-3 font-medium text-gray-900 dark:text-white">
-                                <a href="{{ route('collections.show', $collection->member->id) }}" class="text-orange-600 dark:text-orange-400 hover:underline">
+                                <a href="{{ route('collections.show', ['member' => $collection->member->id, 'collection_id' => $collection->id]) }}" class="text-orange-600 dark:text-orange-400 hover:underline">
                                     {{ $collection->member->name }}
                                 </a>
                             </td>

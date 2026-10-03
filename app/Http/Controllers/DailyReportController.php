@@ -166,7 +166,7 @@ class DailyReportController extends Controller
         ->get();
 
         foreach ($members as $member) {
-            $collection = $member->collections()->first();
+            $collection = $member->currentCollection()->first();
 
             if ($collection && $collection->balance > 0) {
                 $expectedToday += $member->amount;

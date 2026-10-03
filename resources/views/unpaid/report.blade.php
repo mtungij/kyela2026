@@ -120,7 +120,7 @@
                             </td>
 
                             <td class="px-6 py-3 font-medium">
-                                <a href="{{ route('collections.show', $collection->member->id) }}"
+                                <a href="{{ route('collections.show', ['member' => $collection->member->id, 'collection_id' => $collection->id]) }}"
                                    class="text-white hover:underline">
                                     {{ $collection->member->name }}
                                 </a>

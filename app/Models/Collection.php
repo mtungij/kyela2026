@@ -10,6 +10,8 @@ class Collection extends Model
 {
     protected $fillable = [
         'member_id',
+        'game_cycle_id',
+        'installment_amount',
         'total_amount',
         'amount_paid',
         'balance',
@@ -22,6 +24,7 @@ class Collection extends Model
 
     protected $casts = [
         'total_amount' => 'decimal:2',
+        'installment_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'balance' => 'decimal:2',
         'total_penalty' => 'decimal:2',
@@ -33,6 +36,11 @@ class Collection extends Model
     public function member(): BelongsTo
     {
         return $this->belongsTo(Member::class);
+    }
+
+    public function gameCycle(): BelongsTo
+    {
+        return $this->belongsTo(GameCycle::class);
     }
 
     public function payments(): HasMany

@@ -4,6 +4,7 @@ use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\GameCycleController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\PaymentReportController;
 use App\Http\Controllers\UserController;
@@ -108,6 +109,8 @@ Route::post('/daily/close-account', [DailyReportController::class, 'closeAccount
 
     // User Management Routes - Only Admin
     Route::middleware('admin')->group(function () {
+        Route::get('game-cycles/create', [GameCycleController::class, 'create'])->name('game-cycles.create');
+        Route::post('game-cycles', [GameCycleController::class, 'store'])->name('game-cycles.store');
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::get('users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
